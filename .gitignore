@@ -1,0 +1,10 @@
+# Python
+*.pyc
+*.log
+__pycache__/
+venv/
+.venv/
+*.egg-info/
+
+# Data
+*.csv
