@@ -1,103 +1,150 @@
+# Google Forms Matchmaking System 🧩
+
+This project automates the process of matching two groups of people based on their answers to Google Forms. It is designed to maximize compatibility between members of the two groups while ensuring fairness in assignments.
+
+Recently refactored into a robust Python package, it now features a modular "Hybrid" architecture, multiple matching strategies (Greedy, Hungarian), and Docker support for easy deployment.
 
 ---
 
-# Freshmen–Veteran Matching System 🎓
+## Features
 
-This project automates the process of matching **freshmen** with **veterans** based on answers from Google Forms.
-It ensures every freshman is assigned a veteran, while trying to maximize compatibility and keep assignments fair.
+- **Flexible Matching**: Works for any two groups (e.g., mentors and mentees, teammates, dates).
+- **Multiple Algorithms**: Choose between **Global Greedy**, **Iterative Greedy** (Legacy), or **Hungarian** (Optimal) strategies.
+- **Customizable Scoring**: Define questions and weights in `config.json` without touching code.
+- **Scalable Architecture**: Built with a "Functional Core, Modular Shell" design to handle large datasets.
+- **Dockerized**: Run anywhere without dependency headaches.
 
 ---
 
-## How it Works
+## Use Case: Freshman–Veteran Matching 🎓
+
+One example use case is matching **freshmen** with **veterans** to help integrate new students into academic life. Veterans can contact their assigned freshmen to offer guidance and support.
+
+*Note: While built for this context, the system is agnostic and can match any Group A to Group B.*
+
+---
+
+## How It Works
 
 1. **Data Input**
+   - Two groups (e.g., Group A and Group B) fill out Google Forms.
+   - Export responses as CSV files and place them in `data/inputs/`.
+   - Configure file paths and column names in `config/config.json`.
 
-   * Freshmen and veterans fill out Google Forms with multiple-choice and checkbox-style questions.
-   * Export responses as CSV files:
+2. **Compatibility Scoring (Functional Core)**
+   - **Checkbox questions**: Computes intersection of interests (weighted).
+   - **Multiple-choice questions**: Exact matches earn points (weighted).
+   - Logic is handled by pure functions in `src/scorer.py`.
 
-     * `FCT Unio - Caloiros (Respostas).csv`
-     * `FCT Unio - Veteranos (Respostas).csv`
+3. **Assignment Logic (Strategy Pattern)**
+   - **Greedy**: Sorts *all* potential matches by score and picks the best global pairs.
+   - **Iterative Greedy**: The original logic—iterates through freshmen one by one.
+   - **Hungarian**: Uses the Kuhn-Munkres algorithm for mathematically optimal assignments.
 
-2. **Compatibility Scoring**
-
-   * **Checkbox questions** → +1 point for every common option between freshman and veteran.
-   * **Multiple-choice questions** → +1 point if both picked the same option.
-   * The final score is the sum of these points.
-
-3. **Assignment Logic**
-
-   * If **freshmen ≥ veterans** → Each veteran gets a balanced number of freshmen.
-   * If **freshmen < veterans** → Each veteran can take at most 1 freshman.
-   * Freshmen are assigned to the **best available veteran match** under these rules.
-   * This ensures **no freshman is left without a veteran**.
-
----
-
-## Output Files
-
-The program generates two CSV files:
-
-* **`compatibility_scores.csv`**
-  A matrix with freshmen as columns, veterans as rows, and the compatibility score in each intersection.
-  Can be useful for a manual analysis.
-
-* **`matches.csv`**
-  Final pairings with:
-
-  * Freshman + Veteran names
-  * Emails and phone numbers (from the forms)
-  * Compatibility score
+4. **Output Files**
+   - Final matches saved to `data/outputs/matches.csv`.
+   - Compatibility score matrix saved for analysis.
 
 ---
 
 ## Setup & Running
 
 1. Clone this repository:
+```bash
+   git clone [https://github.com/your-username/google-forms-matchmaker.git](https://github.com/your-username/google-forms-matchmaker.git)
+   cd google-forms-matchmaker
 
-   ```bash
-   git clone https://github.com/duartePereira16/veteran-freshman-matcher.git
-   cd veteran-freshman-matcher
-   ```
+```
 
-2. Create and activate a virtual environment (optional but recommended):
+2. Configure the project:
+* Edit `config/config.json` to specify your input files, questions, and weights.
 
-   ```bash
-   python -m venv venv
-   source venv/bin/activate   # On Linux/Mac
-   venv\Scripts\activate      # On Windows
-   ```
 
-3. Install dependencies:
+3. Run the application:
+**Option A: Using Docker (Recommended)**
+```bash
+# Build the image
+docker build -t matchmaker .
 
-   ```bash
-   pip install pandas
-   ```
+# Run with data volume mount
+docker run --rm -v $(pwd)/data:/app/data matchmaker
 
-4. Place your CSV files (`FCT Unio - Caloiros (Respostas).csv` and `FCT Unio - Veteranos (Respostas).csv`) in the project folder.
+```
 
-5. Run the script:
 
-   ```bash
-   python matchmaking.py
-   ```
+**Option B: Local Python**
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-6. Check the generated output files:
+# Install dependencies
+pip install -r requirements.txt
 
-   * `matches.csv`
-   * `compatibility_scores.csv`
+# Run
+python -m src.main --config config/config.json
+
+```
+
+
+4. Check the output files:
+* `data/outputs/matches.csv`
+
+
+
+---
+
+## Example Configuration
+
+Here’s an example `config.json` for freshman-veteran matching:
+
+```json
+{
+    "labels": {
+        "group_a": "Veteran", 
+        "group_b": "Freshman"
+    },
+    "files": {
+        "group_a": "data/inputs/veterans.csv",
+        "group_b": "data/inputs/freshmen.csv",
+        "output": "data/outputs/matches.csv"
+    },
+    "columns": {
+        "id_column": "Email Address",
+        "name_column": "Full Name",
+        "contact_info": [
+            "Email Address",
+            "Phone Number"
+        ],
+        "checkbox_questions": [
+            "Hobbies",
+            "Music Taste"
+        ],
+        "multiple_choice_questions": [
+            "Preferred Day",
+            "Favorite Philosopher"
+        ]
+    },
+    "scoring": {
+        "checkbox_weight": 1.0,
+        "multiple_choice_weight": 2.0
+    },
+    "algorithm": "iterative_greedy"
+}
+
+```
 
 ---
 
 ## Limitations & Future Improvements
 
-* The assignment algorithm is **greedy** → it looks for the best match freshman by freshman, not the best global assignment.
-* Veterans may still remain unmatched if there are fewer freshmen than veterans.
-* Tie-breaking depends on CSV order when multiple veterans have the same score.
+* **Tie-Breaking**: The `iterative_greedy` algorithm relies on CSV order for ties. (Fix: Use `greedy` or `hungarian` for order-independent results).
+* **Capacity Handling**: Currently assumes static capacity or simple distribution logic.
 
-**Potential improvements:**
+**Future Improvements**:
 
-* Implement a better matching algorithm to achieve global optimization.
-* Add more sophisticated scoring (e.g., weighted questions).
-* Create a simple UI or Google Sheets integration for easier use.
+* Build a web interface for easier use.
+* Add negative scoring (penalties) for incompatible answers.
+* Implement a Genetic Algorithm for multi-objective optimization.
 
 ---
