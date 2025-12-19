@@ -1,10 +1,17 @@
-# Python
-*.pyc
-*.log
+# Python junk
 __pycache__/
-venv/
-.venv/
-*.egg-info/
+*.pyc
 
-# Data
+# Data (Protect Privacy!)
+data/inputs/*
+data/outputs/*
 *.csv
+*.xlsx
+
+# Config (Optional: exclude if it contains secrets, otherwise keep it)
+mockConfig.json
+# config.json
+
+# Environment
+.env
+venv/
