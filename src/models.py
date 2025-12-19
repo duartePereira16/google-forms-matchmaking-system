@@ -1,13 +1,14 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, Set
 
 @dataclass(frozen=True)
 class Participant:
-    id: str                     # Unique ID (e.g., Email)
+    id: str                                         # Unique ID (e.g., Email)
     name: str
-    attributes: Dict[str, str]  # Raw answers for multiple choice
-    interests: Set[str]         # Parsed set for checkboxes (e.g., {"Music", "Sports"})
-    capacity: int = 1           # How many people can they be matched with?
+    check_box_answers: Dict[str, Set[str]]          # question name -> set of answers
+    multiple_choice_answers: Dict[str, str]         # question name -> answer    
+    contact_info: Dict[str, str]                    # field name -> info (e.g., email, phone)
+    capacity: int = 1
 
 @dataclass(frozen=True)
 class Match:

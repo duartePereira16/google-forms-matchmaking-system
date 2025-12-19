@@ -8,9 +8,15 @@ data/outputs/*
 *.csv
 *.xlsx
 
-# Config (Optional: exclude if it contains secrets, otherwise keep it)
-mockConfig.json
-# config.json
+# Data Exceptions (Examples)
+!data/inputs/veterans.csv
+!data/inputs/freshmen.csv
+!data/outputs/matches.csv
+
+# Config
+*.json
+# Example model
+!config/config.json     
 
 # Environment
 .env
