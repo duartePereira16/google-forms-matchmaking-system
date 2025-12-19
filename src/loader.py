@@ -31,17 +31,31 @@ def load_participants(
         p_id = row[config_cols['id_column']]
         name = row[config_cols['name_column']]
         
-        interests = set()
-        for col in config_cols['checkbox_questions']:
-             if pd.notna(row.get(col)):
-                 items = [x.strip() for x in str(row[col]).split(',')]
-                 interests.update(items)
+        # check box questions
+        check_box_answers = {}
+        for question in config_cols['checkbox_questions']:
+             if pd.notna(row.get(question)):
+                 items = [x.strip() for x in str(row[question]).split(',')]
+                 check_box_answers[question] = items
+        
+        # multiple choice questions
+        multiple_choice_answers = {}
+        for question in config_cols['multiple_choice_questions']:
+            if pd.notna(row.get(question)):
+                multiple_choice_answers[question] = str(row[question]).strip()
+
+        # contact info (phone nr, email)
+        contact_info = {}
+        for field in config_cols['contact_info']:
+            contact_info[field] = str(row.get(field, "N/A"))
+
                  
         p = Participant(
             id=p_id,
             name=name,
-            attributes=row.to_dict(),
-            interests=interests,
+            check_box_answers=check_box_answers,
+            multiple_choice_answers=multiple_choice_answers,
+            contact_info=contact_info,
             capacity=capacities[i]
         )
         participants.append(p)

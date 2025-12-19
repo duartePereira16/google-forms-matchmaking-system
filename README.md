@@ -2,14 +2,14 @@
 
 This project automates the process of matching two groups of people based on their answers to Google Forms. It is designed to maximize compatibility between members of the two groups while ensuring fairness in assignments.
 
-Recently refactored into a robust Python package, it now features a modular "Hybrid" architecture, multiple matching strategies (Greedy, Hungarian), and Docker support for easy deployment.
+Recently refactored from a simple script into a robust Python package, it now features a relatively modular architecture, multiple matching strategies (Greedy, Hungarian), and Docker support for easy deployment.
 
 ---
 
 ## Features
 
 - **Flexible Matching**: Works for any two groups (e.g., mentors and mentees, teammates, dates).
-- **Multiple Algorithms**: Choose between **Global Greedy**, **Iterative Greedy** (Legacy), or **Hungarian** (Optimal) strategies.
+- **Multiple Algorithms**: Choose between **Global Greedy**, **Iterative Greedy** (initial implementation), or **Hungarian** (Optimal) strategies.
 - **Customizable Scoring**: Define questions and weights in `config.json` without touching code.
 - **Scalable Architecture**: Built with a "Functional Core, Modular Shell" design to handle large datasets.
 - **Dockerized**: Run anywhere without dependency headaches.
@@ -51,8 +51,8 @@ One example use case is matching **freshmen** with **veterans** to help integrat
 
 1. Clone this repository:
 ```bash
-   git clone [https://github.com/your-username/google-forms-matchmaker.git](https://github.com/your-username/google-forms-matchmaker.git)
-   cd google-forms-matchmaker
+   git clone https://github.com/duartePereira16/google-forms-matchmaking-system.git
+   cd google-forms-matchmaking-system
 
 ```
 
@@ -101,7 +101,7 @@ Here’s an example `config.json` for freshman-veteran matching:
 ```json
 {
     "labels": {
-        "group_a": "Veteran", 
+        "group_a": "Veteran",
         "group_b": "Freshman"
     },
     "files": {
@@ -121,15 +121,19 @@ Here’s an example `config.json` for freshman-veteran matching:
             "Music Taste"
         ],
         "multiple_choice_questions": [
-            "Preferred Day",
+            "Favorite Day of the Week",
             "Favorite Philosopher"
         ]
     },
     "scoring": {
-        "checkbox_weight": 1.0,
-        "multiple_choice_weight": 2.0
+        "default_checkbox_weight": 1.0,
+        "default_multiple_choice_weight": 2.0,
+        "weights": {
+            "Favorite Philosopher": 4.0,
+            "Music Taste": 3.0
+        }
     },
-    "algorithm": "iterative_greedy"
+    "algorithm": "hungarian"
 }
 
 ```

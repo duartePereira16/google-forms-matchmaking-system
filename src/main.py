@@ -26,8 +26,8 @@ def save_matches(matches, output_path, config_cols, labels):
         
         # 3. Add dynamic contact info
         for field in contact_fields:
-            row[f"{label_b} {field}"] = match.mentee.attributes.get(field, "N/A")
-            row[f"{label_a} {field}"] = match.mentor.attributes.get(field, "N/A")
+            row[f"{label_b} {field}"] = match.mentee.contact_info.get(field, "N/A")
+            row[f"{label_a} {field}"] = match.mentor.contact_info.get(field, "N/A")
             
         output_data.append(row)
 
@@ -39,7 +39,7 @@ def save_matches(matches, output_path, config_cols, labels):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", default="config/mockConfig.json")
+    parser.add_argument("--config", default="config/config.json")
     args = parser.parse_args()
 
     with open(args.config, encoding='utf-8') as f:

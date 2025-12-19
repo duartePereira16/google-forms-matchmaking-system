@@ -1,6 +1,6 @@
 {
     "labels": {
-        "group_a": "Veteran", 
+        "group_a": "Veteran",
         "group_b": "Freshman"
     },
     "files": {
@@ -25,8 +25,12 @@
         ]
     },
     "scoring": {
-        "checkbox_weight": 1.0,
-        "multiple_choice_weight": 2.0
+        "default_checkbox_weight": 1.0,
+        "default_multiple_choice_weight": 2.0,
+        "weights": {
+            "Favorite Philosopher": 4.0,
+            "Music Taste": 3.0
+        }
     },
-    "algorithm": "iterative_greedy"
+    "algorithm": "hungarian"
 }
