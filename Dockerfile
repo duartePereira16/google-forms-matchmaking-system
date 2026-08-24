@@ -13,9 +13,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code
 COPY src/ ./src/
 COPY config/ ./config/
+COPY app.py .
 
 # (Optional) Create data directories so they exist
 RUN mkdir -p data/inputs data/outputs
 
-# Define the entry point
-ENTRYPOINT ["python", "-m", "src.main"]
+# Streamlit port
+EXPOSE 8501
+
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]

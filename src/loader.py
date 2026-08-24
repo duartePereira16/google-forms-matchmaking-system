@@ -3,13 +3,17 @@ from typing import List
 from src.models import Participant
 
 def load_participants(
-    filepath: str, 
+    filepath_or_df, 
     config_cols: dict, 
     is_mentor: bool = False,
-    mentee_count: int = 0  # <--- This argument is required by the new main.py
+    mentee_count: int = 0
 ) -> List[Participant]:
     
-    df = pd.read_csv(filepath)
+    if isinstance(filepath_or_df, pd.DataFrame):
+        df = filepath_or_df
+    else:
+        df = pd.read_csv(filepath_or_df)
+    
     participants = []
     nr_participants = len(df)
     
