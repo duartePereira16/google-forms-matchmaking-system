@@ -12,7 +12,7 @@ Originally a simple script, it has evolved into a fully-fledged **Streamlit Web 
 - **Flexible Data Mapping**: Automatically cross-references headers from both Google Forms. Works with *any* form structure.
 - **Multiple Algorithms**: Choose between **Global Greedy**, **Iterative Greedy**, or the mathematically optimal **Hungarian** strategy.
 - **Dynamic Weight Scoring**: Assign custom weights to every single Checkbox (intersection matching) or Multiple Choice (exact match) question instantly from the UI.
-- **Integrated Email Notifier**: Review matches and send beautifully templated HTML emails directly to Mentors and Mentees in one click (with a safe "Dry Run" mode).
+- **Integrated Email Notifier**: Review matches and emails directly to both groups in one click.
 - **Dockerized**: Zero-setup deployment using Docker Compose.
 
 ---
@@ -23,7 +23,7 @@ The easiest and recommended way to run this application is using Docker.
 
 ### 1. Prerequisites
 - Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) or Docker Compose.
-- Ensure you have your exported CSV files from your two Google Forms.
+- Ensure you have your exported CSV files from your two Google Forms. Both CSV files **must** have identical column headers.
 
 ### 2. Launch the Application
 ```bash
@@ -35,7 +35,19 @@ docker-compose up --build
 ```
 The Matchmaking UI will instantly be available in your browser at `http://localhost:8501`.
 
-### 3. Email Configuration
+---
+
+## The Workflow
+
+1. **Upload Data**: Drag and drop your Group A and Group B CSV files into the browser.
+2. **Identity Mapping**: Tell the system which columns correspond to the participant's Name, ID (Email), and extra Contact Info.
+3. **Question Mapping**: All remaining columns are treated as questions. You simply specify if they are a Checkbox or Multiple Choice question, and assign a priority weight.
+4. **Execute**: Pick your algorithm and click Generate.
+5. **Review & Send**: View the matched table in the browser. You can toggle the detailed view, download the results as a CSV, and preview the actual HTML emails with real data.
+6. **Email Configuration**: When you are ready to send emails, click "Configure & Send Emails". A secure popup will ask for your Gmail address and a [Google App Password](https://myaccount.google.com/apppasswords) to safely dispatch the matches!
+
+## Email Configuration Setup
+
 If you want to use the built-in email notifier to send matches to participants the app needs to log into a Gmail account. Google no longer allows simple password logins for scripts, so you must generate an **App Password**.
 
 ### Tutorial: How to get an App Password
@@ -46,87 +58,14 @@ If you want to use the built-in email notifier to send matches to participants t
 5. Give it a name (e.g., "Matchmaker") and click **Create**.
 6. Google will give you a 16-character password in a yellow box. **Copy this password**.
 
-### Setting up the `.env` file
-1. Create a new file named `.env` in the root folder of this project (right next to this README).
-2. Add your email and the 16-character App Password (without spaces) like this:
-
-```
-SENDER_EMAIL=your.email@gmail.com
-SENDER_PASSWORD=abcdefghijklmnop
-```
-*Note: Make sure not to put quotes around the email or password.*
-
 ---
 
-## The Workflow
+## Customizing Email Templates
 
-1. **Upload Data**: Drag and drop your Group A and Group B CSV files into the browser.
-2. **Identity Mapping**: Tell the system which columns correspond to the participant's Name, Email, and extra Contact Info.
-3. **Question Mapping**: All remaining columns are treated as questions. You simply specify if they are a Checkbox or Multiple Choice question, and assign a priority weight.
-4. **Execute**: Pick your algorithm and click Generate.
-5. **Review & Send**: View the matched table in the browser. You can download the results as a CSV, preview the actual HTML emails with real data, and click "Send".
+If you want to create your own email designs:
+1. Navigate to `src/templates/`.
+2. Create a new folder for your theme (e.g., `src/templates/my-theme/`).
+3. Add a `mentor_template.html` and a `mentee_template.html` inside your new folder.
+4. The web app will automatically detect your new theme in the "Template Theme" dropdown during Step 5!
 
----
-
-## CLI Usage (Legacy)
-If you prefer running the logic headlessly without the UI, you can still use the Python CLI.
-
-```bash
-# Set up a virtual environment
-python -m venv venv
-source venv/bin/activate            # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-
-# Run the CLI using a config file (see config.example.json)
-python -m src.main --config config.example.json
-```
-
-**config.example.json:**
-
-```json
-{
-    "labels": {
-        "group_a": "Veteran",
-        "group_b": "Freshman"
-    },
-    "files": {
-        "group_a": "data/inputs/veterans.csv",
-        "group_b": "data/inputs/freshmen.csv",
-        "output": "data/outputs/matches.csv"
-    },
-    "columns": {
-        "id_column": "Email Address",
-        "name_column": "Full Name",
-        "contact_info": [
-            "Email Address",
-            "Phone Number"
-        ],
-        "checkbox_questions": [
-            "Hobbies",
-            "Music Taste"
-        ],
-        "multiple_choice_questions": [
-            "Favorite Day of the Week",
-            "Favorite Philosopher"
-        ]
-    },
-    "scoring": {
-        "default_checkbox_weight": 1.0,
-        "default_multiple_choice_weight": 2.0,
-        "weights": {
-            "Favorite Philosopher": 4.0,
-            "Music Taste": 3.0
-        }
-    },
-    "algorithm": "hungarian",
-    "notifications": {
-        "send_to_group_a": true,
-        "send_to_group_b": true,
-        "mentor_template": "src/templates/mentor_template.html",
-        "mentee_template": "src/templates/mentee_template.html"
-    }
-}
-```
-
-
----
+*(You can use placeholders like `{{mentor_name}}`, `{{mentee_name}}`, `{{mentor_contact}}`, and `{{mentee_contact}}` in your HTML to inject dynamic data).*
