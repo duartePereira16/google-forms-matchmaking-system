@@ -2,7 +2,16 @@ import os
 import tempfile
 from unittest.mock import MagicMock, patch
 import pytest
-from src.mailer import format_template, EmailDispatcher, send_email
+from src.models import Match, Participant
+from src.mailer import (
+    format_template, 
+    EmailDispatcher, 
+    send_email,
+    build_contact_html,
+    group_matches_by_mentor,
+    build_mentor_email_context,
+    build_mentee_email_context
+)
 
 def test_format_template_successful_replacement():
     """Verify template placeholders are accurately replaced with context values."""
@@ -68,3 +77,65 @@ def test_send_email_convenience_function(mock_smtp_ssl):
     mock_server.sendmail.assert_called_once()
     mock_server.quit.assert_called_once()
 
+def test_build_contact_html():
+    """Verify contact dictionary formats as clean HTML list."""
+    assert build_contact_html({}) == "None provided"
+    html = build_contact_html({"Phone": "12345", "Discord": "@alex"})
+    assert "<li><strong>Phone:</strong> 12345</li>" in html
+    assert "<li><strong>Discord:</strong> @alex</li>" in html
+
+def test_group_matches_by_mentor():
+    """Verify matches are grouped by mentor ID."""
+    mentor1 = Participant("m1@test.com", "Mentor 1", {}, {}, {}, capacity=2)
+    mentor2 = Participant("m2@test.com", "Mentor 2", {}, {}, {}, capacity=1)
+    mentee1 = Participant("e1@test.com", "Mentee 1", {}, {}, {})
+    mentee2 = Participant("e2@test.com", "Mentee 2", {}, {}, {})
+    mentee3 = Participant("e3@test.com", "Mentee 3", {}, {}, {})
+
+    matches = [
+        Match(mentor1, mentee1, 4.0),
+        Match(mentor1, mentee2, 3.5),
+        Match(mentor2, mentee3, 5.0)
+    ]
+
+    grouped = group_matches_by_mentor(matches)
+    assert len(grouped) == 2
+    assert len(grouped["m1@test.com"]) == 2
+    assert len(grouped["m2@test.com"]) == 1
+
+def test_build_mentor_email_context_single_and_multi():
+    """Verify context generation for single-mentee vs multi-mentee mentor."""
+    mentor = Participant("sarah@test.com", "Sarah Connor", {}, {}, {"Phone": "555-0101"})
+    mentee1 = Participant("peter@test.com", "Peter Parker", {}, {}, {"Phone": "555-0201"})
+    mentee2 = Participant("miles@test.com", "Miles Morales", {}, {}, {"Phone": "555-0202"})
+
+    # Single mentee context
+    ctx_single = build_mentor_email_context(mentor, [Match(mentor, mentee1, 4.0)])
+    assert ctx_single["mentor_name"] == "Sarah Connor"
+    assert ctx_single["mentee_name"] == "Peter Parker"
+    assert ctx_single["mentee_count"] == 1
+    assert "555-0201" in ctx_single["mentee_contact"]
+
+    # Multi mentee context
+    ctx_multi = build_mentor_email_context(mentor, [Match(mentor, mentee1, 4.0), Match(mentor, mentee2, 3.5)])
+    assert ctx_multi["mentor_name"] == "Sarah Connor"
+    assert ctx_multi["mentee_name"] == "Peter Parker, Miles Morales"
+    assert ctx_multi["mentee_count"] == 2
+    assert "Peter Parker" in ctx_multi["mentee_contact"]
+    assert "Miles Morales" in ctx_multi["mentee_contact"]
+    assert "555-0201" in ctx_multi["mentee_contact"]
+    assert "555-0202" in ctx_multi["mentee_contact"]
+
+def test_build_mentee_email_context():
+    """Verify mentee context contains mentor info and mentee info."""
+    mentor = Participant("sarah@test.com", "Sarah Connor", {}, {}, {"Phone": "555-0101"})
+    mentee = Participant("peter@test.com", "Peter Parker", {}, {}, {"Phone": "555-0201"})
+    match = Match(mentor, mentee, 4.0)
+
+    ctx = build_mentee_email_context(match)
+    assert ctx["mentor_name"] == "Sarah Connor"
+    assert ctx["mentor_email"] == "sarah@test.com"
+    assert "555-0101" in ctx["mentor_contact"]
+    assert ctx["mentee_name"] == "Peter Parker"
+    assert ctx["mentee_email"] == "peter@test.com"
+    assert "555-0201" in ctx["mentee_contact"]

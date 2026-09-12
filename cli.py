@@ -8,10 +8,16 @@ from rich.table import Table
 from rich.text import Text
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from src.loader import load_participants
-from src.scorer import compute_match_score
+from src.engine import MatchmakingConfig, MatchmakingEngine
 from src.strategies import ALGORITHMS
-from src.mailer import format_template, send_email, EmailDispatcher
+from src.mailer import (
+    format_template, 
+    send_email, 
+    EmailDispatcher,
+    group_matches_by_mentor,
+    build_mentor_email_context,
+    build_mentee_email_context
+)
 
 console = Console()
 
@@ -213,38 +219,23 @@ def run_step_4(state):
     if algo is None: return 'exit'
 
     config = state['question_config']
-    config_cols = {
-        "id_column": state['id_col'],
-        "name_column": state['name_col'],
-        "contact_info": state['contact_cols'],
-        "checkbox_questions": [q for q, cfg in config.items() if cfg['type'] == 'Checkbox'],
-        "multiple_choice_questions": [q for q, cfg in config.items() if cfg['type'] == 'Multiple Choice']
-    }
-    
+    checkbox_qs = [q for q, cfg in config.items() if cfg['type'] == 'Checkbox']
+    mc_qs = [q for q, cfg in config.items() if cfg['type'] == 'Multiple Choice']
     weights = {q: cfg['weight'] for q, cfg in config.items() if cfg['type'] != 'Exclude'}
-            
-    scoring = {
-        "default_checkbox_weight": 1.0,
-        "default_multiple_choice_weight": 1.0,
-        "weights": weights
-    }
 
-    group_b = load_participants(state['df_b'], config_cols, is_mentor=False)
-    group_a = load_participants(state['df_a'], config_cols, is_mentor=True, mentee_count=len(group_b))
+    match_config = MatchmakingConfig(
+        id_column=state['id_col'],
+        name_column=state['name_col'],
+        contact_info=state['contact_cols'],
+        checkbox_questions=checkbox_qs,
+        multiple_choice_questions=mc_qs,
+        weights=weights,
+        algorithm=algo
+    )
 
     with console.status(f"[bold cyan]Running {algo} matcher...[/bold cyan]", spinner="dots"):
-        score_data = {}
-        for b in group_b:
-            col_scores = []
-            for a in group_a:
-                col_scores.append(compute_match_score(a, b, scoring))
-            score_data[b.id] = col_scores
-        
-        score_df = pd.DataFrame(score_data, index=[a.id for a in group_a])
-
-        MatcherClass = ALGORITHMS[algo]
-        matcher = MatcherClass()
-        matches = matcher.match(group_a, group_b, score_df)
+        engine = MatchmakingEngine(match_config)
+        matches, score_df = engine.run(state['df_a'], state['df_b'])
         
     console.print(f"\n[bold green]Successfully generated {len(matches)} matches![/bold green]")
     
@@ -253,18 +244,17 @@ def run_step_4(state):
     table.add_column(state['group_b_label'])
     table.add_column("Score", justify="right")
     
-    match_data = []
     for m in matches:
         table.add_row(m.mentor.name, m.mentee.name, f"{m.score:.1f}")
-        row = {f"{state['group_a_label']}": m.mentor.name, f"{state['group_b_label']}": m.mentee.name, "Score": m.score}
-        for c in state['contact_cols']:
-            row[f"{state['group_a_label']} {c}"] = m.mentor.contact_info.get(c, "N/A")
-            row[f"{state['group_b_label']} {c}"] = m.mentee.contact_info.get(c, "N/A")
-        match_data.append(row)
 
     console.print(table)
     
-    res_df = pd.DataFrame(match_data)
+    res_df = MatchmakingEngine.format_matches_to_dataframe(
+        matches,
+        group_a_label=state['group_a_label'],
+        group_b_label=state['group_b_label'],
+        contact_cols=state['contact_cols']
+    )
     res_df.to_csv("matches.csv", index=False)
     console.print("[dim]Matches exported to matches.csv[/dim]\n")
 
@@ -300,11 +290,6 @@ def run_step_5(state):
         console.print("[bold red]Credentials missing. Aborting email send.[/bold red]")
         return 'back'
 
-    def format_contact(contact_dict):
-        if not contact_dict:
-            return "None provided"
-        return "<ul>" + "".join([f"<li><strong>{k}:</strong> {v}</li>" for k, v in contact_dict.items()]) + "</ul>"
-
     mentor_template_path = os.path.join("src/templates", selected_theme, "mentor_template.html")
     mentee_template_path = os.path.join("src/templates", selected_theme, "mentee_template.html")
 
@@ -312,6 +297,9 @@ def run_step_5(state):
     error_count = 0
     
     matches = state['matches']
+    grouped_by_mentor = group_matches_by_mentor(matches)
+    total_emails = (len(grouped_by_mentor) if send_mentors else 0) + (len(matches) if send_mentees else 0)
+
     try:
         with EmailDispatcher(sender_email, sender_password) as dispatcher:
             with Progress(
@@ -319,30 +307,29 @@ def run_step_5(state):
                 TextColumn("[progress.description]{task.description}"),
                 console=console
             ) as progress:
-                task = progress.add_task("[cyan]Sending emails...", total=len(matches) * ((1 if send_mentors else 0) + (1 if send_mentees else 0)))
+                task = progress.add_task("[cyan]Sending emails...", total=total_emails)
                 
-                for m in matches:
-                    m_ctx = {
-                        "mentor_name": m.mentor.name, "mentor_email": m.mentor.id,
-                        "mentee_name": m.mentee.name, "mentee_email": m.mentee.id,
-                        "mentee_contact": format_contact(m.mentee.contact_info),
-                        "mentor_contact": format_contact(m.mentor.contact_info)
-                    }
-                    
-                    if send_mentors and os.path.exists(mentor_template_path):
+                # 1. Send consolidated emails to mentors
+                if send_mentors and os.path.exists(mentor_template_path):
+                    for mentor_id, m_list in grouped_by_mentor.items():
+                        mentor = m_list[0].mentor
+                        m_ctx = build_mentor_email_context(mentor, m_list)
                         try:
                             html_body = format_template(mentor_template_path, m_ctx)
-                            dispatcher.send_email(m.mentor.id, f"Matchmaking Result", html_body)
+                            dispatcher.send_email(mentor.id, f"Matchmaking Result - {state['group_a_label']}", html_body)
                             success_count += 1
                         except Exception as e:
                             error_count += 1
-                            console.print(f"[red]Error sending to {m.mentor.id}: {e}[/red]")
+                            console.print(f"[red]Error sending to {mentor.id}: {e}[/red]")
                         progress.advance(task)
-                    
-                    if send_mentees and os.path.exists(mentee_template_path):
+                
+                # 2. Send emails to mentees
+                if send_mentees and os.path.exists(mentee_template_path):
+                    for m in matches:
+                        m_ctx = build_mentee_email_context(m)
                         try:
                             html_body = format_template(mentee_template_path, m_ctx)
-                            dispatcher.send_email(m.mentee.id, f"Matchmaking Result", html_body)
+                            dispatcher.send_email(m.mentee.id, f"Matchmaking Result - {state['group_b_label']}", html_body)
                             success_count += 1
                         except Exception as e:
                             error_count += 1

@@ -2,7 +2,8 @@ import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
+from src.models import Match, Participant
 
 def format_template(template_path: str, context: Dict[str, Any]) -> str:
     """
@@ -21,6 +22,67 @@ def format_template(template_path: str, context: Dict[str, Any]) -> str:
         placeholder = f"{{{{{key}}}}}"
         content = content.replace(placeholder, str(value))
     return content
+
+def build_contact_html(contact_dict: Dict[str, str]) -> str:
+    """Formats a contact dictionary into an HTML unordered list."""
+    if not contact_dict:
+        return "None provided"
+    items = [f"<li><strong>{k}:</strong> {v}</li>" for k, v in contact_dict.items()]
+    return f"<ul>{''.join(items)}</ul>"
+
+def group_matches_by_mentor(matches: List[Match]) -> Dict[str, List[Match]]:
+    """Groups matches by mentor ID, preserving all assigned mentees."""
+    grouped: Dict[str, List[Match]] = {}
+    for m in matches:
+        grouped.setdefault(m.mentor.id, []).append(m)
+    return grouped
+
+def build_mentor_email_context(mentor: Participant, mentor_matches: List[Match]) -> Dict[str, Any]:
+    """
+    Builds the template context for a mentor. 
+    Handles both single-mentee and multi-mentee assignments cleanly.
+    """
+    if not mentor_matches:
+        raise ValueError(f"No matches provided for mentor {mentor.id}")
+
+    mentees = [m.mentee for m in mentor_matches]
+    mentee_names = ", ".join(m.name for m in mentees)
+    mentee_emails = ", ".join(m.id for m in mentees)
+
+    if len(mentees) == 1:
+        mentee_contact_html = build_contact_html(mentees[0].contact_info)
+    else:
+        # Structure multi-mentee contacts with clear visual separation
+        blocks = []
+        for mentee in mentees:
+            contact_details = build_contact_html(mentee.contact_info)
+            blocks.append(
+                f'<div style="margin-bottom: 12px; padding: 10px; border-left: 4px solid #0869e9; background-color: #f8f9fa; border-radius: 4px;">'
+                f'<strong>{mentee.name}</strong> ({mentee.id})<br>{contact_details}'
+                f'</div>'
+            )
+        mentee_contact_html = "".join(blocks)
+
+    return {
+        "mentor_name": mentor.name,
+        "mentor_email": mentor.id,
+        "mentor_contact": build_contact_html(mentor.contact_info),
+        "mentee_name": mentee_names,
+        "mentee_email": mentee_emails,
+        "mentee_contact": mentee_contact_html,
+        "mentee_count": len(mentees),
+    }
+
+def build_mentee_email_context(match: Match) -> Dict[str, Any]:
+    """Builds the template context for a mentee."""
+    return {
+        "mentor_name": match.mentor.name,
+        "mentor_email": match.mentor.id,
+        "mentor_contact": build_contact_html(match.mentor.contact_info),
+        "mentee_name": match.mentee.name,
+        "mentee_email": match.mentee.id,
+        "mentee_contact": build_contact_html(match.mentee.contact_info),
+    }
 
 class EmailDispatcher:
     """
