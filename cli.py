@@ -11,7 +11,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from src.loader import load_participants
 from src.scorer import compute_match_score
 from src.strategies import ALGORITHMS
-from src.mailer import format_template, send_email
+from src.mailer import format_template, send_email, EmailDispatcher
 
 console = Console()
 
@@ -312,40 +312,44 @@ def run_step_5(state):
     error_count = 0
     
     matches = state['matches']
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
-        task = progress.add_task("[cyan]Sending emails...", total=len(matches) * ((1 if send_mentors else 0) + (1 if send_mentees else 0)))
-        
-        for m in matches:
-            m_ctx = {
-                "mentor_name": m.mentor.name, "mentor_email": m.mentor.id,
-                "mentee_name": m.mentee.name, "mentee_email": m.mentee.id,
-                "mentee_contact": format_contact(m.mentee.contact_info),
-                "mentor_contact": format_contact(m.mentor.contact_info)
-            }
-            
-            if send_mentors and os.path.exists(mentor_template_path):
-                html_body = format_template(mentor_template_path, m_ctx)
-                try:
-                    send_email(m.mentor.id, f"Matchmaking Result", html_body, sender_email, sender_password)
-                    success_count += 1
-                except Exception as e:
-                    error_count += 1
-                    console.print(f"[red]Error sending to {m.mentor.id}: {e}[/red]")
-                progress.advance(task)
-            
-            if send_mentees and os.path.exists(mentee_template_path):
-                html_body = format_template(mentee_template_path, m_ctx)
-                try:
-                    send_email(m.mentee.id, f"Matchmaking Result", html_body, sender_email, sender_password)
-                    success_count += 1
-                except Exception as e:
-                    error_count += 1
-                    console.print(f"[red]Error sending to {m.mentee.id}: {e}[/red]")
-                progress.advance(task)
+    try:
+        with EmailDispatcher(sender_email, sender_password) as dispatcher:
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console
+            ) as progress:
+                task = progress.add_task("[cyan]Sending emails...", total=len(matches) * ((1 if send_mentors else 0) + (1 if send_mentees else 0)))
+                
+                for m in matches:
+                    m_ctx = {
+                        "mentor_name": m.mentor.name, "mentor_email": m.mentor.id,
+                        "mentee_name": m.mentee.name, "mentee_email": m.mentee.id,
+                        "mentee_contact": format_contact(m.mentee.contact_info),
+                        "mentor_contact": format_contact(m.mentor.contact_info)
+                    }
+                    
+                    if send_mentors and os.path.exists(mentor_template_path):
+                        try:
+                            html_body = format_template(mentor_template_path, m_ctx)
+                            dispatcher.send_email(m.mentor.id, f"Matchmaking Result", html_body)
+                            success_count += 1
+                        except Exception as e:
+                            error_count += 1
+                            console.print(f"[red]Error sending to {m.mentor.id}: {e}[/red]")
+                        progress.advance(task)
+                    
+                    if send_mentees and os.path.exists(mentee_template_path):
+                        try:
+                            html_body = format_template(mentee_template_path, m_ctx)
+                            dispatcher.send_email(m.mentee.id, f"Matchmaking Result", html_body)
+                            success_count += 1
+                        except Exception as e:
+                            error_count += 1
+                            console.print(f"[red]Error sending to {m.mentee.id}: {e}[/red]")
+                        progress.advance(task)
+    except Exception as e:
+        console.print(f"[bold red]SMTP Connection Error:[/bold red] {e}")
 
     if error_count == 0:
         console.print(f"\n[bold green]Successfully sent {success_count} emails! All done.[/bold green]")

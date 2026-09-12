@@ -4,7 +4,7 @@ import pandas as pd
 from src.loader import load_participants
 from src.scorer import compute_match_score
 from src.strategies import ALGORITHMS
-from src.mailer import format_template, send_email
+from src.mailer import format_template, send_email, EmailDispatcher
 
 st.set_page_config(page_title="Matchmaker", page_icon="🧩", layout="wide")
 
@@ -330,35 +330,41 @@ def email_credentials_dialog():
             with st.spinner("Sending emails..."):
                 success_count = 0
                 error_count = 0
-                for m in st.session_state.matches:
-                    m_ctx = {
-                        "mentor_name": m.mentor.name, 
-                        "mentee_name": m.mentee.name, 
-                        "mentee_contact": format_contact(m.mentee.contact_info),
-                        "mentor_contact": format_contact(m.mentor.contact_info)
-                    }
-                    
-                    if send_mentors and os.path.exists(mentor_template_path):
-                        html_body = format_template(mentor_template_path, m_ctx)
-                        try:
-                            send_email(m.mentor.id, f"Matchmaking Result - {group_a_label}", html_body, sender_email_input, sender_password_input)
-                            success_count += 1
-                        except Exception as e:
-                            error_count += 1
-                            st.error(f"Error sending to {m.mentor.id}: {e}")
-                    
-                    if send_mentees and os.path.exists(mentee_template_path):
-                        html_body = format_template(mentee_template_path, m_ctx)
-                        try:
-                            send_email(m.mentee.id, f"Matchmaking Result - {group_b_label}", html_body, sender_email_input, sender_password_input)
-                            success_count += 1
-                        except Exception as e:
-                            error_count += 1
-                            st.error(f"Error sending to {m.mentee.id}: {e}")
+                try:
+                    with EmailDispatcher(sender_email_input, sender_password_input) as dispatcher:
+                        for m in st.session_state.matches:
+                            m_ctx = {
+                                "mentor_name": m.mentor.name, 
+                                "mentor_email": m.mentor.id,
+                                "mentee_name": m.mentee.name, 
+                                "mentee_email": m.mentee.id,
+                                "mentee_contact": format_contact(m.mentee.contact_info),
+                                "mentor_contact": format_contact(m.mentor.contact_info)
+                            }
+                            
+                            if send_mentors and os.path.exists(mentor_template_path):
+                                try:
+                                    html_body = format_template(mentor_template_path, m_ctx)
+                                    dispatcher.send_email(m.mentor.id, f"Matchmaking Result - {group_a_label}", html_body)
+                                    success_count += 1
+                                except Exception as e:
+                                    error_count += 1
+                                    st.error(f"Error sending to {m.mentor.id}: {e}")
+                            
+                            if send_mentees and os.path.exists(mentee_template_path):
+                                try:
+                                    html_body = format_template(mentee_template_path, m_ctx)
+                                    dispatcher.send_email(m.mentee.id, f"Matchmaking Result - {group_b_label}", html_body)
+                                    success_count += 1
+                                except Exception as e:
+                                    error_count += 1
+                                    st.error(f"Error sending to {m.mentee.id}: {e}")
+                except Exception as e:
+                    st.error(f"SMTP Connection Error: {e}")
                 
-                if error_count == 0:
+                if error_count == 0 and success_count > 0:
                     st.success(f"Successfully sent {success_count} emails!")
-                else:
+                elif error_count > 0:
                     st.warning(f"Sent {success_count} emails, but encountered {error_count} errors.")
 
 
