@@ -89,3 +89,81 @@ def test_compute_match_score_with_weights():
     score = compute_match_score(p1, p2, scoring_config)
     assert score == pytest.approx(8.0)
 
+def test_loader_deduplication_keeps_latest():
+    """Verify that duplicate submissions for the same ID retain the latest submission."""
+    csv_data = io.StringIO(
+        "Email,Name,Hobbies,Day\n"
+        "sarah@test.com,Sarah,Gaming,Monday\n"
+        "alex@test.com,Alex,Art,Tuesday\n"
+        "sarah@test.com,Sarah Connor,\"Coding, Hiking\",Friday\n"
+    )
+    df = pd.read_csv(csv_data)
+    config_cols = {
+        "id_column": "Email",
+        "name_column": "Name",
+        "contact_info": [],
+        "checkbox_questions": ["Hobbies"],
+        "multiple_choice_questions": ["Day"]
+    }
+
+    participants = load_participants(df, config_cols, deduplicate=True)
+    assert len(participants) == 2
+
+    sarah = next(p for p in participants if p.id == "sarah@test.com")
+    assert sarah.name == "Sarah Connor"
+    assert sarah.check_box_answers["Hobbies"] == {"Coding", "Hiking"}
+    assert sarah.multiple_choice_answers["Day"] == "Friday"
+
+def test_loader_filters_empty_and_whitespace_ids():
+    """Verify that rows with null, empty, or whitespace-only IDs are safely excluded."""
+    csv_data = io.StringIO(
+        "Email,Name,Hobbies\n"
+        ",No Email,Gaming\n"
+        "   ,Whitespace Email,Art\n"
+        "valid@test.com,Valid User,Reading\n"
+    )
+    df = pd.read_csv(csv_data)
+    config_cols = {
+        "id_column": "Email",
+        "name_column": "Name",
+        "contact_info": [],
+        "checkbox_questions": ["Hobbies"],
+        "multiple_choice_questions": []
+    }
+
+    participants = load_participants(df, config_cols)
+    assert len(participants) == 1
+    assert participants[0].id == "valid@test.com"
+
+def test_loader_capacity_calculation_with_duplicates():
+    """Verify that mentor capacities are calculated based on unique mentors, not raw duplicate rows."""
+    csv_data = io.StringIO(
+        "Email,Name\n"
+        "m1@test.com,Mentor One (v1)\n"
+        "m1@test.com,Mentor One (v2)\n"
+        "m2@test.com,Mentor Two\n"
+    )
+    df = pd.read_csv(csv_data)
+    config_cols = {
+        "id_column": "Email",
+        "name_column": "Name",
+        "contact_info": [],
+        "checkbox_questions": [],
+        "multiple_choice_questions": []
+    }
+
+    # 4 mentees across 2 unique mentors -> each should get capacity 2
+    mentors = load_participants(df, config_cols, is_mentor=True, mentee_count=4, deduplicate=True)
+    assert len(mentors) == 2
+    assert mentors[0].capacity == 2
+    assert mentors[1].capacity == 2
+
+def test_loader_missing_required_columns():
+    """Verify ValueError is raised if configured ID or name column is missing."""
+    df = pd.DataFrame({"WrongID": ["1"], "Name": ["A"]})
+    config_cols = {
+        "id_column": "Email",
+        "name_column": "Name"
+    }
+    with pytest.raises(ValueError, match="ID column 'Email' not found"):
+        load_participants(df, config_cols)
