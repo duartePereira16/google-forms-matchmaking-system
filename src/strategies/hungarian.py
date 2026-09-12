@@ -1,43 +1,52 @@
 from typing import List
-import pandas as pd
 import numpy as np
+import pandas as pd
 from scipy.optimize import linear_sum_assignment
+
+from src.models import Match, Participant
 from src.strategies.base import MatcherStrategy
-from src.models import Participant, Match
 
 class HungarianMatcher(MatcherStrategy):
-    def match(self, mentors, mentees, score_matrix) -> List[Match]:
-        
-        # 1. Expand Mentors based on capacity (Node Cloning)
-        # If Mentor A has capacity 2, we create Mentor A_1, Mentor A_2
-        expanded_mentors = []
+    """
+    Finds the globally optimal assignment maximizing the total compatibility score
+    using the Hungarian algorithm (Kuhn-Munkres via scipy linear_sum_assignment).
+    
+    Mentors are cloned according to their capacity, and the affinity matrix is 
+    inverted into a cost matrix using vectorized NumPy operations.
+    """
+    def match(
+        self, 
+        mentors: List[Participant], 
+        mentees: List[Participant], 
+        score_matrix: pd.DataFrame
+    ) -> List[Match]:
+        if not mentors or not mentees:
+            return []
+
+        # 1. Expand mentors based on capacity (Node Cloning)
+        expanded_mentors: List[Participant] = []
         for mentor in mentors:
             for _ in range(mentor.capacity):
                 expanded_mentors.append(mentor)
-        
-        # 2. Build the Cost Matrix
-        # Hungarian minimizes cost, so Cost = (Max_Possible_Score - Actual_Score)
-        # We need a matrix of size (N_expanded_mentors x N_mentees)
-        max_score = score_matrix.max().max() + 1.0
-        
-        cost_matrix = np.zeros((len(expanded_mentors), len(mentees)))
-        
-        for r, mentor in enumerate(expanded_mentors):
-            for c, mentee in enumerate(mentees):
-                score = score_matrix.loc[mentor.id, mentee.id]
-                cost_matrix[r, c] = max_score - score
 
-        # 3. Run Hungarian Algorithm (Scipy)
-        # returns row_indices (mentors) and col_indices (mentees)
+        # 2. Extract 2D score array aligned with expanded mentors and mentees
+        expanded_mentor_ids = [m.id for m in expanded_mentors]
+        mentee_ids = [m.id for m in mentees]
+
+        score_values = score_matrix.loc[expanded_mentor_ids, mentee_ids].to_numpy(dtype=float)
+
+        # 3. Vectorized Cost Matrix: Hungarian minimizes cost, so Cost = (Max_Score + 1.0) - Score
+        max_score = float(score_values.max()) + 1.0 if score_values.size > 0 else 1.0
+        cost_matrix = max_score - score_values
+
+        # 4. Run linear sum assignment (Hungarian algorithm)
         row_ind, col_ind = linear_sum_assignment(cost_matrix)
-        
-        # 4. Reconstruct Matches
-        matches = []
+
+        # 5. Reconstruct Matches
+        matches: List[Match] = []
         for r, c in zip(row_ind, col_ind):
             mentor = expanded_mentors[r]
             mentee = mentees[c]
-            # Retrieve original score
-            original_score = score_matrix.loc[mentor.id, mentee.id]
-            matches.append(Match(mentor, mentee, original_score))
-            
+            matches.append(Match(mentor=mentor, mentee=mentee, score=float(score_values[r, c])))
+
         return matches
