@@ -3,3 +3,5 @@ numpy==1.26.0
 scipy==1.11.0
 streamlit==1.38.0
 python-dotenv==1.0.1
+rich==13.7.1
+questionary==2.0.1

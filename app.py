@@ -8,7 +8,7 @@ from src.mailer import format_template, send_email
 
 st.set_page_config(page_title="Matchmaker", page_icon="🧩", layout="wide")
 
-st.title("🧩 Matchmaking System")
+st.title("🧩 PairSync")
 st.markdown("Upload your forms, configure your questions, and automatically match Mentors with Mentees.")
 
 # --- Session State Initialization ---
@@ -237,8 +237,8 @@ for m in st.session_state.matches:
             row[f"{group_b_label} {c}"] = m.mentee.contact_info.get(c, "N/A")
             
         for q in st.session_state.config_cols['checkbox_questions']:
-            row[f"{q} ({group_a_label})"] = ", ".join(m.mentor.check_box_answers.get(q, []))
-            row[f"{q} ({group_b_label})"] = ", ".join(m.mentee.check_box_answers.get(q, []))
+            row[f"{q} ({group_a_label})"] = ", ".join(sorted(m.mentor.check_box_answers.get(q, set())))
+            row[f"{q} ({group_b_label})"] = ", ".join(sorted(m.mentee.check_box_answers.get(q, set())))
         for q in st.session_state.config_cols['multiple_choice_questions']:
             row[f"{q} ({group_a_label})"] = m.mentor.multiple_choice_answers.get(q, "")
             row[f"{q} ({group_b_label})"] = m.mentee.multiple_choice_answers.get(q, "")

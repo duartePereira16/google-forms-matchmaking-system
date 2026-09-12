@@ -35,6 +35,20 @@ docker-compose up --build
 ```
 The Matchmaking UI will instantly be available in your browser at `http://localhost:8501`.
 
+### 3. Launching the CLI
+If you prefer a terminal-based, you can use the interactive CLI.
+
+```bash
+# Ensure you are in a virtual environment
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Run the CLI
+python cli.py
+```
+The CLI guides you through the exact same workflow as the web UI, but directly in your terminal with arrow-key navigation!
+
 ---
 
 ## The Workflow
