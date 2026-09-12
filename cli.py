@@ -2,6 +2,9 @@ import os
 import sys
 import pandas as pd
 import questionary
+from dotenv import load_dotenv
+
+load_dotenv()
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -283,8 +286,11 @@ def run_step_5(state):
         return 'done'
 
     console.print("\n[dim]Please provide credentials for the Google Account sending the emails.[/dim]")
-    sender_email = questionary.text("Enter Sender Email Address:").ask()
+    default_email = os.getenv("SENDER_EMAIL", "")
+    sender_email = questionary.text("Enter Sender Email Address:", default=default_email).ask()
     sender_password = questionary.password("Enter App Password:").ask()
+    if not sender_password:
+        sender_password = os.getenv("SENDER_PASSWORD", "")
     
     if not sender_email or not sender_password:
         console.print("[bold red]Credentials missing. Aborting email send.[/bold red]")

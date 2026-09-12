@@ -1,5 +1,9 @@
 import os
+import pandas as pd
 import streamlit as st
+from dotenv import load_dotenv
+
+load_dotenv()
 from src.engine import MatchmakingConfig, MatchmakingEngine
 from src.strategies import ALGORITHMS
 from src.mailer import (
@@ -288,8 +292,10 @@ with preview_col2:
 @st.dialog("Enter Email Credentials")
 def email_credentials_dialog():
     st.markdown("Enter your Gmail address and 16-character App Password to send emails.")
-    sender_email_input = st.text_input("Sender Email Address")
-    sender_password_input = st.text_input("App Password", type="password")
+    default_email = os.getenv("SENDER_EMAIL", "")
+    default_password = os.getenv("SENDER_PASSWORD", "")
+    sender_email_input = st.text_input("Sender Email Address", value=default_email)
+    sender_password_input = st.text_input("App Password", value=default_password, type="password")
     
     if st.button("Confirm & Send"):
         if not sender_email_input or not sender_password_input:

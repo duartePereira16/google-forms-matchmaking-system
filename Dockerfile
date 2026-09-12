@@ -1,23 +1,15 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim
+FROM python:3.10-slim
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements file into the container
+# Install dependencies using uv for lightning-fast builds
 COPY requirements.txt .
+RUN uv pip install --system --no-cache -r requirements.txt
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy project files
+COPY . .
 
-# Copy the rest of the application code
-COPY src/ ./src/
-COPY app.py .
-
-# (Optional) Create data directories so they exist
-RUN mkdir -p data/inputs data/outputs
-
-# Streamlit port
 EXPOSE 8501
 
 ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
