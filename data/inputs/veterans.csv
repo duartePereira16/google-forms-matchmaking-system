@@ -1,11 +1,11 @@
 Email Address,Full Name,Phone Number,Hobbies,Music Taste,Favorite Day of the Week,Favorite Philosopher
-vet.sarah@example.com,Sarah Connor,555-0101,Coding;Hiking;Chess,Rock;Jazz,Friday,Nietzsche
-vet.john@example.com,John Wick,555-0102,Gaming;Martial Arts,Metal;Classical,Saturday,Marcus Aurelius
-vet.ellen@example.com,Ellen Ripley,555-0103,Astronomy;Reading;Traveling,Synthwave;Pop,Sunday,Camus
-vet.tony@example.com,Tony Stark,555-0104,Robotics;Cars;Partying,Rock;AC/DC,Friday,Nietzsche
-vet.bruce@example.com,Bruce Wayne,555-0105,Gym;Gadgets;Detective Work,Classical;Jazz,Monday,Aristotle
-vet.han@example.com,Han Solo,555-0106,Flying;Card Games;Shooting,Classic Rock;Instrumental,Friday,Sartre
-vet.leia@example.com,Leia Organa,555-0107,Politics;Leadership;Target Practice,Classical;Orchestral,Sunday,Plato
-vet.indy@example.com,Indiana Jones,555-0108,History;Traveling;Teaching,Jazz;Swing,Tuesday,Kant
-vet.marty@example.com,Marty McFly,555-0109,Skating;Music;Sci-Fi,Rock n Roll;Pop,Saturday,Locke
-vet.gandalf@example.com,Gandalf The Grey,555-0110,Smoking;Hiking;Fireworks,Folk;Ancient,Wednesday,Aristotle
+vet.sarah@example.com,Sarah Connor,555-0101,"Coding, Hiking, Chess","Rock, Jazz",Friday,Nietzsche
+vet.john@example.com,John Wick,555-0102,"Gaming, Martial Arts","Metal, Classical",Saturday,Marcus Aurelius
+vet.ellen@example.com,Ellen Ripley,555-0103,"Astronomy, Reading, Traveling","Synthwave, Pop",Sunday,Camus
+vet.tony@example.com,Tony Stark,555-0104,"Robotics, Cars, Partying","Rock, AC/DC",Friday,Nietzsche
+vet.bruce@example.com,Bruce Wayne,555-0105,"Gym, Gadgets, Detective Work","Classical, Jazz",Monday,Aristotle
+vet.han@example.com,Han Solo,555-0106,"Flying, Card Games, Shooting","Classic Rock, Instrumental",Friday,Sartre
+vet.leia@example.com,Leia Organa,555-0107,"Politics, Leadership, Target Practice","Classical, Orchestral",Sunday,Plato
+vet.indy@example.com,Indiana Jones,555-0108,"History, Traveling, Teaching","Jazz, Swing",Tuesday,Kant
+vet.marty@example.com,Marty McFly,555-0109,"Skating, Music, Sci-Fi","Rock n Roll, Pop",Saturday,Locke
+vet.gandalf@example.com,Gandalf The Grey,555-0110,"Smoking, Hiking, Fireworks","Folk, Ancient",Wednesday,Aristotle

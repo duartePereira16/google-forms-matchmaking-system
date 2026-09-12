@@ -1,20 +1,27 @@
+import re
+from typing import Any, Dict, List, Set, Union
 import pandas as pd
-from typing import List
 from src.models import Participant
 
 def load_participants(
-    filepath_or_df, 
-    config_cols: dict, 
+    filepath_or_df: Union[str, pd.DataFrame], 
+    config_cols: Dict[str, Any], 
     is_mentor: bool = False,
     mentee_count: int = 0
 ) -> List[Participant]:
+    """
+    Loads participants from a CSV file or DataFrame into Participant domain models.
     
+    Parses checkbox questions into sets of strings (handling standard Google Forms
+    comma-separated format as well as semicolon-delimited lists), multiple choice questions
+    as trimmed strings, and assigns mentor capacity when applicable.
+    """
     if isinstance(filepath_or_df, pd.DataFrame):
         df = filepath_or_df
     else:
         df = pd.read_csv(filepath_or_df)
     
-    participants = []
+    participants: List[Participant] = []
     nr_participants = len(df)
     
     # --- Capacity Logic ---
@@ -32,28 +39,29 @@ def load_participants(
 
     # --- Row Processing ---
     for i, (_, row) in enumerate(df.iterrows()):
-        p_id = row[config_cols['id_column']]
-        name = row[config_cols['name_column']]
+        p_id = str(row[config_cols['id_column']]).strip()
+        name = str(row[config_cols['name_column']]).strip()
         
-        # check box questions
-        check_box_answers = {}
-        for question in config_cols['checkbox_questions']:
-             if pd.notna(row.get(question)):
-                 items = [x.strip() for x in str(row[question]).split(',')]
-                 check_box_answers[question] = items
+        # Checkbox questions: split by comma or semicolon, trim whitespace, and store as Set[str]
+        check_box_answers: Dict[str, Set[str]] = {}
+        for question in config_cols.get('checkbox_questions', []):
+            val = row.get(question)
+            if pd.notna(val):
+                items = {x.strip() for x in re.split(r'[;,]\s*', str(val)) if x.strip()}
+                check_box_answers[question] = items
         
-        # multiple choice questions
-        multiple_choice_answers = {}
-        for question in config_cols['multiple_choice_questions']:
-            if pd.notna(row.get(question)):
-                multiple_choice_answers[question] = str(row[question]).strip()
+        # Multiple choice questions
+        multiple_choice_answers: Dict[str, str] = {}
+        for question in config_cols.get('multiple_choice_questions', []):
+            val = row.get(question)
+            if pd.notna(val):
+                multiple_choice_answers[question] = str(val).strip()
 
-        # contact info (phone nr, email)
-        contact_info = {}
-        for field in config_cols['contact_info']:
+        # Contact info (e.g., phone nr, email)
+        contact_info: Dict[str, str] = {}
+        for field in config_cols.get('contact_info', []):
             contact_info[field] = str(row.get(field, "N/A"))
 
-                 
         p = Participant(
             id=p_id,
             name=name,
