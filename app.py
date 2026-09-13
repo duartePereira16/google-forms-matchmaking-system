@@ -314,7 +314,7 @@ def email_credentials_dialog():
                                 m_ctx = build_mentor_email_context(mentor, m_list)
                                 try:
                                     html_body = format_template(mentor_template_path, m_ctx)
-                                    dispatcher.send_email(mentor.id, f"Matchmaking Result - {group_a_label}", html_body)
+                                    dispatcher.send_email(mentor.id, "PairSync Result", html_body)
                                     success_count += 1
                                 except Exception as e:
                                     error_count += 1
@@ -326,7 +326,7 @@ def email_credentials_dialog():
                                 m_ctx = build_mentee_email_context(m)
                                 try:
                                     html_body = format_template(mentee_template_path, m_ctx)
-                                    dispatcher.send_email(m.mentee.id, f"Matchmaking Result - {group_b_label}", html_body)
+                                    dispatcher.send_email(m.mentee.id, "PairSync Result", html_body)
                                     success_count += 1
                                 except Exception as e:
                                     error_count += 1
