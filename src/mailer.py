@@ -23,12 +23,24 @@ def format_template(template_path: str, context: Dict[str, Any]) -> str:
         content = content.replace(placeholder, str(value))
     return content
 
+def resolve_mentor_template_path(theme_dir: str, mentee_count: int) -> str:
+    """
+    Resolves the appropriate mentor template path for a given theme:
+    - If mentee_count > 1 and 'multi_mentor_template.html' exists in theme_dir, uses it.
+    - Otherwise, falls back to 'mentor_template.html'.
+    """
+    if mentee_count > 1:
+        multi_path = os.path.join(theme_dir, "multi_mentor_template.html")
+        if os.path.exists(multi_path):
+            return multi_path
+    return os.path.join(theme_dir, "mentor_template.html")
+
 def build_contact_html(contact_dict: Dict[str, str]) -> str:
     """Formats a contact dictionary into an HTML unordered list."""
     if not contact_dict:
         return "None provided"
     items = [f"<li><strong>{k}:</strong> {v}</li>" for k, v in contact_dict.items()]
-    return f"<ul>{''.join(items)}</ul>"
+    return f'<ul style="margin: 4px 0 0 0; padding-left: 20px;">{"".join(items)}</ul>'
 
 def group_matches_by_mentor(matches: List[Match]) -> Dict[str, List[Match]]:
     """Groups matches by mentor ID, preserving all assigned mentees."""
@@ -37,10 +49,55 @@ def group_matches_by_mentor(matches: List[Match]) -> Dict[str, List[Match]]:
         grouped.setdefault(m.mentor.id, []).append(m)
     return grouped
 
-def build_mentor_email_context(mentor: Participant, mentor_matches: List[Match]) -> Dict[str, Any]:
+def render_mentee_cards(mentees: List[Participant], theme_dir: Optional[str] = None) -> str:
+    """
+    Renders individual cards for a list of mentees using the theme's 
+    'mentee_card_template.html' if available, or a clean default card.
+    """
+    card_template_str: Optional[str] = None
+    
+    if theme_dir:
+        base_dir = theme_dir
+        if not os.path.isdir(base_dir) and os.path.isdir(os.path.join("src/templates", base_dir)):
+            base_dir = os.path.join("src/templates", base_dir)
+        card_template_path = os.path.join(base_dir, "mentee_card_template.html")
+        if os.path.exists(card_template_path):
+            with open(card_template_path, "r", encoding="utf-8") as f:
+                card_template_str = f.read()
+
+    if not card_template_str:
+        # Generic fallback if the theme does not define mentee_card_template.html
+        card_template_str = (
+            '<div class="mentee-card" style="background-color: #ffffff; border: 1px solid #e2e8f0; '
+            'border-radius: 6px; padding: 12px 16px; margin-bottom: 12px;">\n'
+            '    <div class="info-row" style="margin-bottom: 6px;"><span class="info-label" style="font-weight: 600; color: #555;">Name:</span> {{mentee_name}}</div>\n'
+            '    <div class="info-row" style="margin-bottom: 0;"><span class="info-label" style="font-weight: 600; color: #555;">Contacts:</span><br>{{mentee_contact}}</div>\n'
+            '</div>'
+        )
+
+    cards = []
+    for mentee in mentees:
+        ctx = {
+            "mentee_name": mentee.name,
+            "mentee_email": mentee.id,
+            "mentee_contact": build_contact_html(mentee.contact_info)
+        }
+        rendered = card_template_str
+        for k, v in ctx.items():
+            rendered = rendered.replace(f"{{{{{k}}}}}", str(v))
+        cards.append(rendered)
+
+    return "".join(cards)
+
+def build_mentor_email_context(
+    mentor: Participant, 
+    mentor_matches: List[Match],
+    theme_dir: Optional[str] = None
+) -> Dict[str, Any]:
     """
     Builds the template context for a mentor. 
     Handles both single-mentee and multi-mentee assignments cleanly.
+    Delegates card rendering to the theme's mentee_card_template.html sub-template.
     """
     if not mentor_matches:
         raise ValueError(f"No matches provided for mentor {mentor.id}")
@@ -49,19 +106,12 @@ def build_mentor_email_context(mentor: Participant, mentor_matches: List[Match])
     mentee_names = ", ".join(m.name for m in mentees)
     mentee_emails = ", ".join(m.id for m in mentees)
 
+    mentee_cards_html = render_mentee_cards(mentees, theme_dir)
+
     if len(mentees) == 1:
         mentee_contact_html = build_contact_html(mentees[0].contact_info)
     else:
-        # Structure multi-mentee contacts with clear visual separation
-        blocks = []
-        for mentee in mentees:
-            contact_details = build_contact_html(mentee.contact_info)
-            blocks.append(
-                f'<div style="margin-bottom: 12px; padding: 10px; border-left: 4px solid #0869e9; background-color: #f8f9fa; border-radius: 4px;">'
-                f'<strong>{mentee.name}</strong> ({mentee.id})<br>{contact_details}'
-                f'</div>'
-            )
-        mentee_contact_html = "".join(blocks)
+        mentee_contact_html = mentee_cards_html
 
     return {
         "mentor_name": mentor.name,
@@ -70,6 +120,7 @@ def build_mentor_email_context(mentor: Participant, mentor_matches: List[Match])
         "mentee_name": mentee_names,
         "mentee_email": mentee_emails,
         "mentee_contact": mentee_contact_html,
+        "mentee_cards": mentee_cards_html,
         "mentee_count": len(mentees),
     }
 

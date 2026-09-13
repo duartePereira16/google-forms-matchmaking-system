@@ -17,6 +17,7 @@ from src.mailer import (
     format_template, 
     send_email, 
     EmailDispatcher,
+    resolve_mentor_template_path,
     group_matches_by_mentor,
     build_mentor_email_context,
     build_mentee_email_context
@@ -296,8 +297,8 @@ def run_step_5(state):
         console.print("[bold red]Credentials missing. Aborting email send.[/bold red]")
         return 'back'
 
-    mentor_template_path = os.path.join("src/templates", selected_theme, "mentor_template.html")
-    mentee_template_path = os.path.join("src/templates", selected_theme, "mentee_template.html")
+    theme_dir = os.path.join("src/templates", selected_theme)
+    mentee_template_path = os.path.join(theme_dir, "mentee_template.html")
 
     success_count = 0
     error_count = 0
@@ -315,18 +316,23 @@ def run_step_5(state):
             ) as progress:
                 task = progress.add_task("[cyan]Sending emails...", total=total_emails)
                 
-                # 1. Send consolidated emails to mentors
-                if send_mentors and os.path.exists(mentor_template_path):
+                # 1. Send consolidated emails to mentors using appropriate single or multi template
+                if send_mentors:
                     for mentor_id, m_list in grouped_by_mentor.items():
                         mentor = m_list[0].mentor
-                        m_ctx = build_mentor_email_context(mentor, m_list)
-                        try:
-                            html_body = format_template(mentor_template_path, m_ctx)
-                            dispatcher.send_email(mentor.id, "PairSync Result", html_body)
-                            success_count += 1
-                        except Exception as e:
+                        m_ctx = build_mentor_email_context(mentor, m_list, theme_dir=theme_dir)
+                        mentor_template_path = resolve_mentor_template_path(theme_dir, len(m_list))
+                        if os.path.exists(mentor_template_path):
+                            try:
+                                html_body = format_template(mentor_template_path, m_ctx)
+                                dispatcher.send_email(mentor.id, f"Matchmaking Result - {state['group_a_label']}", html_body)
+                                success_count += 1
+                            except Exception as e:
+                                error_count += 1
+                                console.print(f"[red]Error sending to {mentor.id}: {e}[/red]")
+                        else:
                             error_count += 1
-                            console.print(f"[red]Error sending to {mentor.id}: {e}[/red]")
+                            console.print(f"[red]Template missing: {mentor_template_path}[/red]")
                         progress.advance(task)
                 
                 # 2. Send emails to mentees
@@ -335,7 +341,7 @@ def run_step_5(state):
                         m_ctx = build_mentee_email_context(m)
                         try:
                             html_body = format_template(mentee_template_path, m_ctx)
-                            dispatcher.send_email(m.mentee.id, "PairSync Result", html_body)
+                            dispatcher.send_email(m.mentee.id, f"Matchmaking Result - {state['group_b_label']}", html_body)
                             success_count += 1
                         except Exception as e:
                             error_count += 1

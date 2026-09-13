@@ -10,6 +10,7 @@ from src.mailer import (
     format_template, 
     send_email, 
     EmailDispatcher,
+    resolve_mentor_template_path,
     group_matches_by_mentor,
     build_mentor_email_context,
     build_mentee_email_context
@@ -259,34 +260,48 @@ with col2:
 
 st.subheader("Email Preview")
 grouped_mentors = group_matches_by_mentor(st.session_state.matches)
-first_mentor_id = list(grouped_mentors.keys())[0]
-first_mentor_matches = grouped_mentors[first_mentor_id]
-first_mentor = first_mentor_matches[0].mentor
-
-mentor_context = build_mentor_email_context(first_mentor, first_mentor_matches)
-mentee_context = build_mentee_email_context(first_mentor_matches[0])
-
-mentor_template_path = os.path.join("src/templates", selected_theme, "mentor_template.html")
-mentee_template_path = os.path.join("src/templates", selected_theme, "mentee_template.html")
+theme_dir = os.path.join("src/templates", selected_theme)
 
 preview_col1, preview_col2 = st.columns(2)
+
 with preview_col1:
     if send_mentors:
-        if os.path.exists(mentor_template_path):
-            st.markdown(f"**{group_a_label} Template Preview**")
-            html_preview = format_template(mentor_template_path, mentor_context)
-            st.components.v1.html(html_preview, height=400, scrolling=True)
+        st.markdown(f"**{group_a_label} Template Preview**")
+        mentor_options = list(grouped_mentors.keys())
+        selected_m_id = st.selectbox(
+            f"Select {group_a_label} to preview", 
+            options=mentor_options, 
+            format_func=lambda mid: f"{grouped_mentors[mid][0].mentor.name} ({len(grouped_mentors[mid])} {group_b_label}{'s' if len(grouped_mentors[mid]) > 1 else ''})"
+        )
+        m_list = grouped_mentors[selected_m_id]
+        mentor_obj = m_list[0].mentor
+        mentor_ctx = build_mentor_email_context(mentor_obj, m_list, theme_dir=theme_dir)
+        mentor_tpl_path = resolve_mentor_template_path(theme_dir, len(m_list))
+
+        if os.path.exists(mentor_tpl_path):
+            html_preview = format_template(mentor_tpl_path, mentor_ctx)
+            st.components.v1.html(html_preview, height=420, scrolling=True)
         else:
-            st.error(f"Missing {mentor_template_path}")
+            st.error(f"Missing template: {mentor_tpl_path}")
 
 with preview_col2:
     if send_mentees:
-        if os.path.exists(mentee_template_path):
-            st.markdown(f"**{group_b_label} Template Preview**")
-            html_preview = format_template(mentee_template_path, mentee_context)
-            st.components.v1.html(html_preview, height=400, scrolling=True)
+        st.markdown(f"**{group_b_label} Template Preview**")
+        mentee_options = list(range(len(st.session_state.matches)))
+        selected_idx = st.selectbox(
+            f"Select {group_b_label} to preview",
+            options=mentee_options,
+            format_func=lambda idx: st.session_state.matches[idx].mentee.name
+        )
+        match_obj = st.session_state.matches[selected_idx]
+        mentee_ctx = build_mentee_email_context(match_obj)
+        mentee_tpl_path = os.path.join(theme_dir, "mentee_template.html")
+
+        if os.path.exists(mentee_tpl_path):
+            html_preview = format_template(mentee_tpl_path, mentee_ctx)
+            st.components.v1.html(html_preview, height=420, scrolling=True)
         else:
-            st.error(f"Missing {mentee_template_path}")
+            st.error(f"Missing template: {mentee_tpl_path}")
 
 
 @st.dialog("Enter Email Credentials")
@@ -307,26 +322,32 @@ def email_credentials_dialog():
                 grouped_by_mentor = group_matches_by_mentor(st.session_state.matches)
                 try:
                     with EmailDispatcher(sender_email_input, sender_password_input) as dispatcher:
-                        # 1. Send consolidated emails to mentors
-                        if send_mentors and os.path.exists(mentor_template_path):
+                        # 1. Send consolidated emails to mentors using appropriate single or multi template
+                        if send_mentors:
                             for mentor_id, m_list in grouped_by_mentor.items():
                                 mentor = m_list[0].mentor
-                                m_ctx = build_mentor_email_context(mentor, m_list)
-                                try:
-                                    html_body = format_template(mentor_template_path, m_ctx)
-                                    dispatcher.send_email(mentor.id, "PairSync Result", html_body)
-                                    success_count += 1
-                                except Exception as e:
+                                m_ctx = build_mentor_email_context(mentor, m_list, theme_dir=theme_dir)
+                                mentor_tpl_path = resolve_mentor_template_path(theme_dir, len(m_list))
+                                if os.path.exists(mentor_tpl_path):
+                                    try:
+                                        html_body = format_template(mentor_tpl_path, m_ctx)
+                                        dispatcher.send_email(mentor.id, f"Matchmaking Result - {group_a_label}", html_body)
+                                        success_count += 1
+                                    except Exception as e:
+                                        error_count += 1
+                                        st.error(f"Error sending to {mentor.id}: {e}")
+                                else:
                                     error_count += 1
-                                    st.error(f"Error sending to {mentor.id}: {e}")
+                                    st.error(f"Missing template: {mentor_tpl_path}")
                         
                         # 2. Send emails to mentees
-                        if send_mentees and os.path.exists(mentee_template_path):
+                        if send_mentees and os.path.exists(os.path.join(theme_dir, "mentee_template.html")):
+                            mentee_tpl_path = os.path.join(theme_dir, "mentee_template.html")
                             for m in st.session_state.matches:
                                 m_ctx = build_mentee_email_context(m)
                                 try:
-                                    html_body = format_template(mentee_template_path, m_ctx)
-                                    dispatcher.send_email(m.mentee.id, "PairSync Result", html_body)
+                                    html_body = format_template(mentee_tpl_path, m_ctx)
+                                    dispatcher.send_email(m.mentee.id, f"Matchmaking Result - {group_b_label}", html_body)
                                     success_count += 1
                                 except Exception as e:
                                     error_count += 1

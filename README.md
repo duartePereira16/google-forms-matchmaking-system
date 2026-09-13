@@ -112,7 +112,11 @@ SENDER_PASSWORD=your16charpassword
 
 You can add or customize email designs in `src/templates/`:
 1. Create a folder for your theme (e.g., `src/templates/my-theme/`).
-2. Add `mentor_template.html` and `mentee_template.html` inside your folder.
+2. Add your HTML templates:
+   - `mentor_template.html`: Sent to mentors assigned a single mentee.
+   - `mentee_template.html`: Sent to mentees.
+   - `multi_mentor_template.html` *(Optional)*: Dedicated template sent to mentors assigned 2 or more mentees (e.g., customized cohort/group instructions). If omitted, the system seamlessly falls back to `mentor_template.html`.
+   - `mentee_card_template.html` *(Optional)*: Sub-template defining the layout, language labels (`Nome:` vs `Name:`), and border styling for each mentee card when rendered inside `{{mentee_cards}}`. If omitted, a clean generic card is used.
 3. The application will automatically detect your new theme in the dropdown menu.
 
 ### Supported Placeholders
@@ -124,6 +128,7 @@ You can add or customize email designs in `src/templates/`:
 | `{{mentee_name}}` | Full name of the mentee (or comma-separated names if mentor has $>1$ mentees) |
 | `{{mentee_email}}` | ID / Email of the mentee (or comma-separated emails) |
 | `{{mentee_contact}}` | HTML formatted contact info (or consolidated contact cards for multi-mentee mentors) |
+| `{{mentee_cards}}` | Individual styled HTML cards for each mentee (Name + Contacts, without email) |
 | `{{mentee_count}}` | Number of mentees assigned to the mentor (available in mentor templates) |
 
 ---

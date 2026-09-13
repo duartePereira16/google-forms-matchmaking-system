@@ -7,8 +7,10 @@ from src.mailer import (
     format_template, 
     EmailDispatcher, 
     send_email,
+    resolve_mentor_template_path,
     build_contact_html,
     group_matches_by_mentor,
+    render_mentee_cards,
     build_mentor_email_context,
     build_mentee_email_context
 )
@@ -116,7 +118,7 @@ def test_build_mentor_email_context_single_and_multi():
     assert ctx_single["mentee_count"] == 1
     assert "555-0201" in ctx_single["mentee_contact"]
 
-    # Multi mentee context
+    # Multi mentee context (default theme -> Name/Contacts)
     ctx_multi = build_mentor_email_context(mentor, [Match(mentor, mentee1, 4.0), Match(mentor, mentee2, 3.5)])
     assert ctx_multi["mentor_name"] == "Sarah Connor"
     assert ctx_multi["mentee_name"] == "Peter Parker, Miles Morales"
@@ -125,6 +127,41 @@ def test_build_mentor_email_context_single_and_multi():
     assert "Miles Morales" in ctx_multi["mentee_contact"]
     assert "555-0201" in ctx_multi["mentee_contact"]
     assert "555-0202" in ctx_multi["mentee_contact"]
+    # Verify email is not included next to the name
+    assert "peter@test.com" not in ctx_multi["mentee_contact"]
+    assert "miles@test.com" not in ctx_multi["mentee_contact"]
+    assert "Name:" in ctx_multi["mentee_contact"]
+    assert "Contacts:" in ctx_multi["mentee_contact"]
+    assert ctx_multi["mentee_cards"] == ctx_multi["mentee_contact"]
+
+    # Multi mentee context (fct-unio Portuguese theme -> Nome/Contactos and orange border from sub-template)
+    ctx_pt = build_mentor_email_context(mentor, [Match(mentor, mentee1, 4.0), Match(mentor, mentee2, 3.5)], theme_dir="src/templates/fct-unio")
+    assert "Nome:" in ctx_pt["mentee_cards"]
+    assert "Contactos:" in ctx_pt["mentee_cards"]
+    assert "peter@test.com" not in ctx_pt["mentee_cards"]
+    assert "#f18e0c" in ctx_pt["mentee_cards"]
+
+def test_render_mentee_cards_custom_subtemplate(tmp_path):
+    """Verify render_mentee_cards respects a custom theme's mentee_card_template.html."""
+    custom_card = tmp_path / "mentee_card_template.html"
+    custom_card.write_text('<div class="custom-card">Hi {{mentee_name}}! Reach out: {{mentee_contact}}</div>')
+
+    mentee = Participant("charlie@test.com", "Charlie", {}, {}, {"Telegram": "@charlie"})
+    rendered = render_mentee_cards([mentee], theme_dir=str(tmp_path))
+
+    assert "custom-card" in rendered
+    assert "Hi Charlie!" in rendered
+    assert "@charlie" in rendered
+    assert "charlie@test.com" not in rendered
+
+def test_render_mentee_cards_fallback(tmp_path):
+    """Verify render_mentee_cards gracefully uses fallback when mentee_card_template.html is absent."""
+    mentee = Participant("diana@test.com", "Diana", {}, {}, {"Phone": "123"})
+    rendered = render_mentee_cards([mentee], theme_dir=str(tmp_path))
+
+    assert "mentee-card" in rendered
+    assert "Diana" in rendered
+    assert "123" in rendered
 
 def test_build_mentee_email_context():
     """Verify mentee context contains mentor info and mentee info."""
@@ -139,3 +176,32 @@ def test_build_mentee_email_context():
     assert ctx["mentee_name"] == "Peter Parker"
     assert ctx["mentee_email"] == "peter@test.com"
     assert "555-0201" in ctx["mentee_contact"]
+
+def test_resolve_mentor_template_path_single(tmp_path):
+    """When mentee_count <= 1, mentor_template.html should be resolved."""
+    single_tpl = tmp_path / "mentor_template.html"
+    single_tpl.write_text("Single mentee template")
+    multi_tpl = tmp_path / "multi_mentor_template.html"
+    multi_tpl.write_text("Multi mentee template")
+
+    resolved = resolve_mentor_template_path(str(tmp_path), mentee_count=1)
+    assert resolved == str(single_tpl)
+
+def test_resolve_mentor_template_path_multi_when_available(tmp_path):
+    """When mentee_count > 1 and multi_mentor_template.html exists, it should be resolved."""
+    single_tpl = tmp_path / "mentor_template.html"
+    single_tpl.write_text("Single mentee template")
+    multi_tpl = tmp_path / "multi_mentor_template.html"
+    multi_tpl.write_text("Multi mentee template")
+
+    resolved = resolve_mentor_template_path(str(tmp_path), mentee_count=3)
+    assert resolved == str(multi_tpl)
+
+def test_resolve_mentor_template_path_multi_fallback_when_missing(tmp_path):
+    """When mentee_count > 1 but multi_mentor_template.html does NOT exist, fall back to mentor_template.html."""
+    single_tpl = tmp_path / "mentor_template.html"
+    single_tpl.write_text("Single mentee template")
+
+    resolved = resolve_mentor_template_path(str(tmp_path), mentee_count=2)
+    assert resolved == str(single_tpl)
+
