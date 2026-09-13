@@ -82,7 +82,7 @@ The CLI guides you through the exact same workflow with interactive arrow-key na
 
 1. **Upload Data**: Load your Group A (Mentors) and Group B (Mentees) CSV files.
 2. **Identity Mapping**: Select which columns correspond to the participant's ID (e.g., Email), Full Name, and Contact Information (e.g., phone number, social handles).
-3. **Question Mapping**: Classify remaining columns as **Checkbox**, **Multiple Choice**, or **Exclude**, and adjust priority weights.
+3. **Question Mapping**: Classify remaining columns as **Checkbox**, **Multiple Choice** (scores when identical), **Multiple Choice (Opposites)** (scores when answers differ), or **Exclude**, and adjust priority weights.
 4. **Execute**: Pick your matching algorithm (**Hungarian**, **Iterative Greedy**, or **Greedy**) and click **Generate Matches**.
 5. **Review & Export**: Inspect the match table, toggle the detailed view with full survey responses, download `matches.csv`, and preview email templates with real data.
 6. **Dispatch Emails**: Click "Configure & Send Emails" to dispatch personalized emails via Gmail SMTP using a Google App Password.

@@ -123,14 +123,14 @@ def update_global_cb():
 def update_global_mc():
     new_w = st.session_state.global_mc_weight_input
     for q in question_cols:
-        if st.session_state[f"type_{q}"] == 'Multiple Choice':
+        if st.session_state[f"type_{q}"] in ['Multiple Choice', 'Multiple Choice (Opposites)']:
             st.session_state[f"weight_{q}"] = new_w
 
 def on_type_change(q):
     new_type = st.session_state[f"type_{q}"]
     if new_type == 'Checkbox':
         st.session_state[f"weight_{q}"] = st.session_state.global_cb_weight_input
-    elif new_type == 'Multiple Choice':
+    elif new_type in ['Multiple Choice', 'Multiple Choice (Opposites)']:
         st.session_state[f"weight_{q}"] = st.session_state.global_mc_weight_input
     else:
         st.session_state[f"weight_{q}"] = 0.0
@@ -148,7 +148,7 @@ for q in question_cols:
     with q_name:
         st.markdown(f"#### {q}")
     with q_type:
-        st.selectbox("Type", ['Checkbox', 'Multiple Choice', 'Exclude'], key=f"type_{q}", label_visibility="collapsed", on_change=on_type_change, args=(q,))
+        st.selectbox("Type", ['Checkbox', 'Multiple Choice', 'Multiple Choice (Opposites)', 'Exclude'], key=f"type_{q}", label_visibility="collapsed", on_change=on_type_change, args=(q,))
     with q_weight:
         disabled = (st.session_state[f"type_{q}"] == 'Exclude')
         st.number_input("Weight", step=0.5, key=f"weight_{q}", disabled=disabled, label_visibility="collapsed")
@@ -188,10 +188,11 @@ with col_btn:
         with st.spinner("Processing..."):
             checkbox_qs = [q for q in question_cols if st.session_state[f"type_{q}"] == 'Checkbox']
             mc_qs = [q for q in question_cols if st.session_state[f"type_{q}"] == 'Multiple Choice']
+            diff_qs = [q for q in question_cols if st.session_state[f"type_{q}"] == 'Multiple Choice (Opposites)']
             weights = {
                 q: st.session_state[f"weight_{q}"] 
                 for q in question_cols 
-                if st.session_state[f"type_{q}"] in ['Checkbox', 'Multiple Choice']
+                if st.session_state[f"type_{q}"] in ['Checkbox', 'Multiple Choice', 'Multiple Choice (Opposites)']
             }
                     
             match_config = MatchmakingConfig(
@@ -200,6 +201,7 @@ with col_btn:
                 contact_info=contact_cols,
                 checkbox_questions=checkbox_qs,
                 multiple_choice_questions=mc_qs,
+                difference_questions=diff_qs,
                 weights=weights,
                 default_checkbox_weight=st.session_state.global_cb_weight_input,
                 default_multiple_choice_weight=st.session_state.global_mc_weight_input,
@@ -228,7 +230,8 @@ res_df = MatchmakingEngine.format_matches_to_dataframe(
     contact_cols=cfg.contact_info,
     detailed=show_detailed,
     checkbox_questions=cfg.checkbox_questions,
-    multiple_choice_questions=cfg.multiple_choice_questions
+    multiple_choice_questions=cfg.multiple_choice_questions,
+    difference_questions=cfg.difference_questions
 )
 st.dataframe(res_df, use_container_width=True)
 

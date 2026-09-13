@@ -15,6 +15,7 @@ class MatchmakingConfig:
     contact_info: List[str] = field(default_factory=list)
     checkbox_questions: List[str] = field(default_factory=list)
     multiple_choice_questions: List[str] = field(default_factory=list)
+    difference_questions: List[str] = field(default_factory=list)
     weights: Dict[str, float] = field(default_factory=dict)
     default_checkbox_weight: float = 1.0
     default_multiple_choice_weight: float = 1.0
@@ -28,6 +29,7 @@ class MatchmakingConfig:
             "contact_info": self.contact_info,
             "checkbox_questions": self.checkbox_questions,
             "multiple_choice_questions": self.multiple_choice_questions,
+            "difference_questions": self.difference_questions,
         }
 
     def to_scoring_config(self) -> Dict[str, Any]:
@@ -36,6 +38,7 @@ class MatchmakingConfig:
             "default_checkbox_weight": self.default_checkbox_weight,
             "default_multiple_choice_weight": self.default_multiple_choice_weight,
             "weights": self.weights,
+            "difference_questions": self.difference_questions,
         }
 
 
@@ -101,7 +104,8 @@ class MatchmakingEngine:
         contact_cols: Optional[List[str]] = None,
         detailed: bool = False,
         checkbox_questions: Optional[List[str]] = None,
-        multiple_choice_questions: Optional[List[str]] = None
+        multiple_choice_questions: Optional[List[str]] = None,
+        difference_questions: Optional[List[str]] = None
     ) -> pd.DataFrame:
         """
         Transforms a list of Match instances into a structured pandas DataFrame.
@@ -109,6 +113,7 @@ class MatchmakingEngine:
         contact_cols = contact_cols or []
         checkbox_questions = checkbox_questions or []
         multiple_choice_questions = multiple_choice_questions or []
+        difference_questions = difference_questions or []
 
         rows: List[Dict[str, Any]] = []
         for m in matches:
@@ -127,7 +132,7 @@ class MatchmakingEngine:
                 for q in checkbox_questions:
                     row[f"{q} ({group_a_label})"] = ", ".join(sorted(m.mentor.check_box_answers.get(q, set())))
                     row[f"{q} ({group_b_label})"] = ", ".join(sorted(m.mentee.check_box_answers.get(q, set())))
-                for q in multiple_choice_questions:
+                for q in (multiple_choice_questions + difference_questions):
                     row[f"{q} ({group_a_label})"] = m.mentor.multiple_choice_answers.get(q, "")
                     row[f"{q} ({group_b_label})"] = m.mentee.multiple_choice_answers.get(q, "")
 

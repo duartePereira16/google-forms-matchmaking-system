@@ -23,9 +23,16 @@ def compute_match_score(
             score += intersection_nr * weight
 
     # ---- Multiple choice questions ----
+    difference_questions = set(scoring_configs.get("difference_questions", []))
     common_mc_questions = p1.multiple_choice_answers.keys() & p2.multiple_choice_answers.keys()
     for question in common_mc_questions:
-        if p1.multiple_choice_answers[question] == p2.multiple_choice_answers[question]:
+        ans1 = p1.multiple_choice_answers[question]
+        ans2 = p2.multiple_choice_answers[question]
+        if not ans1 or not ans2:
+            continue
+
+        matched = (ans1 != ans2) if question in difference_questions else (ans1 == ans2)
+        if matched:
             weight = weights.get(question, default_mc_weight)
             score += weight
 

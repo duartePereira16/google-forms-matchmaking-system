@@ -158,7 +158,7 @@ def run_step_3(state):
     for q in question_cols:
         if config[q]['type'] == 'Checkbox':
             config[q]['weight'] = g_cb
-        elif config[q]['type'] == 'Multiple Choice':
+        elif config[q]['type'] in ['Multiple Choice', 'Multiple Choice (Opposites)']:
             config[q]['weight'] = g_mc
 
     while True:
@@ -166,7 +166,7 @@ def run_step_3(state):
         print_banner()
         console.print("[bold yellow]--- Step 3: Question Configuration ---[/bold yellow]\n")
         
-        table = Table(title="Current Question Configuration", show_header=True, header_style="bold magenta")
+        table = Table(title="Question Configuration", show_header=True, header_style="bold magenta")
         table.add_column("Question", style="cyan")
         table.add_column("Type")
         table.add_column("Weight", justify="right")
@@ -194,7 +194,7 @@ def run_step_3(state):
         else:
             # Edit specific question
             q = selection
-            q_type = questionary.select(f"Select Type for '{q}':", choices=['Checkbox', 'Multiple Choice', 'Exclude']).ask()
+            q_type = questionary.select(f"Select Type for '{q}':", choices=['Checkbox', 'Multiple Choice', 'Multiple Choice (Opposites)', 'Exclude']).ask()
             if q_type == 'Exclude':
                 config[q] = {'type': 'Exclude', 'weight': 0.0}
             else:
@@ -225,6 +225,7 @@ def run_step_4(state):
     config = state['question_config']
     checkbox_qs = [q for q, cfg in config.items() if cfg['type'] == 'Checkbox']
     mc_qs = [q for q, cfg in config.items() if cfg['type'] == 'Multiple Choice']
+    diff_qs = [q for q, cfg in config.items() if cfg['type'] == 'Multiple Choice (Opposites)']
     weights = {q: cfg['weight'] for q, cfg in config.items() if cfg['type'] != 'Exclude'}
 
     match_config = MatchmakingConfig(
@@ -233,6 +234,7 @@ def run_step_4(state):
         contact_info=state['contact_cols'],
         checkbox_questions=checkbox_qs,
         multiple_choice_questions=mc_qs,
+        difference_questions=diff_qs,
         weights=weights,
         algorithm=algo
     )

@@ -11,6 +11,7 @@ def test_matchmaking_config_conversion():
         contact_info=["Phone"],
         checkbox_questions=["Hobbies"],
         multiple_choice_questions=["Day"],
+        difference_questions=["Fav Number"],
         weights={"Hobbies": 2.0},
         default_checkbox_weight=1.5,
         default_multiple_choice_weight=1.0,
@@ -23,11 +24,13 @@ def test_matchmaking_config_conversion():
     assert loader_cfg["contact_info"] == ["Phone"]
     assert loader_cfg["checkbox_questions"] == ["Hobbies"]
     assert loader_cfg["multiple_choice_questions"] == ["Day"]
+    assert loader_cfg["difference_questions"] == ["Fav Number"]
 
     scoring_cfg = config.to_scoring_config()
     assert scoring_cfg["default_checkbox_weight"] == 1.5
     assert scoring_cfg["default_multiple_choice_weight"] == 1.0
     assert scoring_cfg["weights"] == {"Hobbies": 2.0}
+    assert scoring_cfg["difference_questions"] == ["Fav Number"]
 
 def test_engine_run_sample_data():
     """Verify end-to-end matchmaking execution using MatchmakingEngine."""
@@ -102,11 +105,13 @@ def test_engine_format_matches_to_dataframe():
         contact_cols=["Phone"],
         detailed=True,
         checkbox_questions=["Hobbies"],
-        multiple_choice_questions=["Day"]
+        multiple_choice_questions=["Day"],
+        difference_questions=["Fav Number"]
     )
     assert "Hobbies (Mentor)" in df_det.columns
     assert df_det.loc[0, "Hobbies (Mentor)"] == "Coding, Hiking"
     assert df_det.loc[0, "Hobbies (Mentee)"] == "Coding, Gym"
     assert df_det.loc[0, "Day (Mentor)"] == "Friday"
     assert df_det.loc[0, "Day (Mentee)"] == "Friday"
+    assert "Fav Number (Mentor)" in df_det.columns
 

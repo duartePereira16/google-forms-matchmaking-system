@@ -82,9 +82,10 @@ def load_participants(
                 items = {x.strip() for x in re.split(r'[;,]\s*', str(val)) if x.strip()}
                 check_box_answers[question] = items
         
-        # Multiple choice questions
+        # Multiple choice questions (both similarity and difference questions)
         multiple_choice_answers: Dict[str, str] = {}
-        for question in config_cols.get('multiple_choice_questions', []):
+        all_mc_questions = list(config_cols.get('multiple_choice_questions', [])) + list(config_cols.get('difference_questions', []))
+        for question in all_mc_questions:
             val = row.get(question)
             if pd.notna(val):
                 multiple_choice_answers[question] = str(val).strip()

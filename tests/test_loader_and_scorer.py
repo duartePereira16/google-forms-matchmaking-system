@@ -167,3 +167,38 @@ def test_loader_missing_required_columns():
     }
     with pytest.raises(ValueError, match="ID column 'Email' not found"):
         load_participants(df, config_cols)
+
+def test_compute_match_score_with_difference_questions():
+    """Verify multiple choice difference questions score on mismatch and not on match."""
+    p_six = Participant("1", "Sixer", {}, {"Fav Number": "6", "Drink": "Tea"}, {})
+    p_seven = Participant("2", "Sevener", {}, {"Fav Number": "7", "Drink": "Tea"}, {})
+    p_six_other = Participant("3", "Another Sixer", {}, {"Fav Number": "6", "Drink": "Coffee"}, {})
+    p_blank = Participant("4", "Blank", {}, {"Fav Number": "", "Drink": "Tea"}, {})
+
+    scoring_config = {
+        "default_multiple_choice_weight": 1.0,
+        "difference_questions": ["Fav Number"],
+        "weights": {
+            "Fav Number": 3.0,
+            "Drink": 1.0
+        }
+    }
+
+    # Six vs Seven:
+    # "Fav Number" is a difference question and answers differ (6 != 7) -> 3.0 points
+    # "Drink" is normal similarity and answers match ("Tea" == "Tea") -> 1.0 point
+    score_diff = compute_match_score(p_six, p_seven, scoring_config)
+    assert score_diff == pytest.approx(4.0)
+
+    # Six vs Six (another sixer):
+    # "Fav Number" answers match (6 == 6) so difference question gets 0.0 points
+    # "Drink" answers differ ("Tea" != "Coffee") so gets 0.0 points
+    score_same = compute_match_score(p_six, p_six_other, scoring_config)
+    assert score_same == pytest.approx(0.0)
+
+    # Six vs Blank:
+    # "Fav Number" is blank for p_blank, so no points awarded
+    # "Drink" matches ("Tea" == "Tea") -> 1.0 point
+    score_blank = compute_match_score(p_six, p_blank, scoring_config)
+    assert score_blank == pytest.approx(1.0)
+
