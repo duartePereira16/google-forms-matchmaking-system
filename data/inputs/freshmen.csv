@@ -1,8 +1,8 @@
 Email Address,Full Name,Phone Number,Hobbies,Music Taste,Favorite Day of the Week,Favorite Philosopher
-fresh.peter@example.com,Peter Parker,555-0201,Photography;Coding;Gym,Pop;Rock,Friday,Nietzsche
-fresh.miles@example.com,Miles Morales,555-0202,Graffiti;Music Production;Gaming,Hip Hop;Jazz,Saturday,Camus
-fresh.kamala@example.com,Kamala Khan,555-0203,Fanfiction;Gaming;Comics,Pop;K-Pop,Friday,Aristotle
-fresh.gwen@example.com,Gwen Stacy,555-0204,Drums;Physics;Traveling,Rock;Punk,Saturday,Nietzsche
-fresh.matt@example.com,Matt Murdock,555-0205,Law;Boxing;Chess,Classical;Jazz,Monday,Marcus Aurelius
-fresh.luke@example.com,Luke Skywalker,555-0206,Piloting;Meditation;Mechanics,Orchestral;Ambient,Sunday,Plato
-fresh.harry@example.com,Harry Potter,555-0207,Sports;Flying;Magic,Pop;Rock,Sunday,Sartre
+fresh.peter@example.com,Peter Parker,555-0201,"Photography, Coding, Gym","Pop, Rock",Friday,Nietzsche
+fresh.miles@example.com,Miles Morales,555-0202,"Graffiti, Music Production, Gaming","Hip Hop, Jazz",Saturday,Camus
+fresh.kamala@example.com,Kamala Khan,555-0203,"Fanfiction, Gaming, Comics","Pop, K-Pop",Friday,Aristotle
+fresh.gwen@example.com,Gwen Stacy,555-0204,"Drums, Physics, Traveling","Rock, Punk",Saturday,Nietzsche
+fresh.matt@example.com,Matt Murdock,555-0205,"Law, Boxing, Chess","Classical, Jazz",Monday,Marcus Aurelius
+fresh.luke@example.com,Luke Skywalker,555-0206,"Piloting, Meditation, Mechanics","Orchestral, Ambient",Sunday,Plato
+fresh.harry@example.com,Harry Potter,555-0207,"Sports, Flying, Magic","Pop, Rock",Sunday,Sartre

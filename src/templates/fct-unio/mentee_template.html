@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #444; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { background: #f18e0c; color: white; padding: 15px 20px; text-align: center; border-radius: 8px 8px 0 0; margin: -30px -30px 20px -30px; }
+        .header h2 { margin: 0; font-size: 24px; font-weight: 600; }
+        .content { font-size: 16px; }
+        .match-info { 
+            background: #fafafa; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-left: 5px solid #0869e9; 
+            border-radius: 0 4px 4px 0; 
+        }
+        .match-info h3 { margin-top: 0; color: #333; font-size: 18px; }
+        .info-row { margin-bottom: 8px; }
+        .info-label { font-weight: 600; color: #555; }
+        .footer { margin-top: 30px; font-size: 14px; color: #777; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>FCT UNIO: Conhece o teu Veterano!</h2>
+        </div>
+        <div class="content">
+            <p>Olá <strong>{{mentee_name}}</strong>,</p>
+            <p>É com enorme entusiasmo que te damos as boas-vindas! Acaba de te ser atribuído um Veterano, que será o teu grande apoio e mentor para te guiar nesta nova e incrível etapa académica.</p>
+            
+            <div class="match-info">
+                <h3>Informações do Veterano</h3>
+                <div class="info-row"><span class="info-label">Nome:</span> {{mentor_name}}</div>
+                <div class="info-row"><span class="info-label">Contactos:</span><br>{{mentor_contact}}</div>
+            </div>
+            
+            <p>O teu Veterano irá entrar em contacto contigo muito em breve. No entanto, não hesites em dar o primeiro passo e enviar uma mensagem através dos contactos fornecidos acima!</p>
+        </div>
+        <div class="footer">
+            Cumprimentos,<br><strong>CoPe de Informática</strong>
+        </div>
+    </div>
+</body>
+</html>

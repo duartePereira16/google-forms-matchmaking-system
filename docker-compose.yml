@@ -1,0 +1,14 @@
+services:
+  matchmaker:
+    build: .
+    container_name: pairsync-matchmaker
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped

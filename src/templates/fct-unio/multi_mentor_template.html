@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #444; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { background: #0869e9; color: white; padding: 15px 20px; text-align: center; border-radius: 8px 8px 0 0; margin: -30px -30px 20px -30px; }
+        .header h2 { margin: 0; font-size: 24px; font-weight: 600; }
+        .content { font-size: 16px; }
+        .match-info { 
+            background: #fafafa; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-left: 5px solid #f18e0c; 
+            border-radius: 0 4px 4px 0; 
+        }
+        .match-info h3 { margin-top: 0; margin-bottom: 14px; color: #333; font-size: 18px; }
+        .mentee-card { background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #f18e0c; border-radius: 6px; padding: 12px 16px; margin-bottom: 12px; }
+        .mentee-card:last-child { margin-bottom: 0; }
+        .info-row { margin-bottom: 6px; }
+        .info-label { font-weight: 600; color: #555; }
+        .mentee-card ul { margin: 4px 0 0 0; padding-left: 20px; }
+        .footer { margin-top: 30px; font-size: 14px; color: #777; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>FCT UNIO: Conhece os teus Caloiros!</h2>
+        </div>
+        <div class="content">
+            <p>Olá <strong>{{mentor_name}}</strong>,</p>
+            <p>Temos excelentes notícias: acabam de te ser atribuídos <strong>{{mentee_count}} Caloiros</strong>! Gostaríamos de relembrar que tens agora em mãos a valiosa missão de ser o seu guia e principal apoio nesta nova jornada universitária.</p>
+            
+            <div class="match-info">
+                <h3>Informação dos Caloiros</h3>
+                {{mentee_cards}}
+            </div>
+            
+            <p>Por favor, entra em contacto com os teus Caloiros com a maior brevidade possível. Sugerimos que cries um grupo (ex: WhatsApp) para os juntares ou que os contactes individualmente se preferires, para que possas apresentares-te e começares a sua integração académica!</p>
+        </div>
+        <div class="footer">
+            Cumprimentos,<br><strong>CoPe de Informática</strong>
+        </div>
+    </div>
+</body>
+</html>

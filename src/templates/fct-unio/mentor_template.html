@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #444; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { background: #0869e9; color: white; padding: 15px 20px; text-align: center; border-radius: 8px 8px 0 0; margin: -30px -30px 20px -30px; }
+        .header h2 { margin: 0; font-size: 24px; font-weight: 600; }
+        .content { font-size: 16px; }
+        .match-info { 
+            background: #fafafa; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-left: 5px solid #f18e0c; 
+            border-radius: 0 4px 4px 0; 
+        }
+        .match-info h3 { margin-top: 0; color: #333; font-size: 18px; }
+        .info-row { margin-bottom: 8px; }
+        .info-label { font-weight: 600; color: #555; }
+        .footer { margin-top: 30px; font-size: 14px; color: #777; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>FCT UNIO: Conhece o teu Caloiro!</h2>
+        </div>
+        <div class="content">
+            <p>Olá <strong>{{mentor_name}}</strong>,</p>
+            <p>Temos excelentes notícias: acaba de te ser atribuído um Caloiro! Gostaríamos de relembrar que tens agora em mãos a valiosa missão de ser o seu guia e principal apoio nesta nova jornada universitária.</p>
+            
+            <div class="match-info">
+                <h3>Informação do Caloiro</h3>
+                <div class="info-row"><span class="info-label">Nome:</span> {{mentee_name}}</div>
+                <div class="info-row"><span class="info-label">Contactos:</span><br>{{mentee_contact}}</div>
+            </div>
+            
+            <p>Por favor, entra em contacto com o teu Caloiro com a maior brevidade possível. Apresenta-te, dá-lhe as boas-vindas e mostra que estás disponível para o ajudar na sua integração!</p>
+        </div>
+        <div class="footer">
+            Cumprimentos,<br><strong>CoPe de Informática</strong>
+        </div>
+    </div>
+</body>
+</html>
