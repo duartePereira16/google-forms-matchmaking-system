@@ -325,7 +325,7 @@ def run_step_5(state):
                         if os.path.exists(mentor_template_path):
                             try:
                                 html_body = format_template(mentor_template_path, m_ctx)
-                                dispatcher.send_email(mentor.id, f"Matchmaking Result - {state['group_a_label']}", html_body)
+                                dispatcher.send_email(mentor.id, f"PairSync Result", html_body)
                                 success_count += 1
                             except Exception as e:
                                 error_count += 1
@@ -341,7 +341,7 @@ def run_step_5(state):
                         m_ctx = build_mentee_email_context(m)
                         try:
                             html_body = format_template(mentee_template_path, m_ctx)
-                            dispatcher.send_email(m.mentee.id, f"Matchmaking Result - {state['group_b_label']}", html_body)
+                            dispatcher.send_email(m.mentee.id, f"PairSync Result", html_body)
                             success_count += 1
                         except Exception as e:
                             error_count += 1

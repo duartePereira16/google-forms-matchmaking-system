@@ -16,7 +16,7 @@ from src.mailer import (
     build_mentee_email_context
 )
 
-st.set_page_config(page_title="Matchmaker", page_icon="🧩", layout="wide")
+st.set_page_config(page_title="PairSync", page_icon="🧩", layout="wide")
 
 st.title("🧩 PairSync")
 st.markdown("Upload your forms, configure your questions, and automatically match Mentors with Mentees.")
@@ -331,7 +331,7 @@ def email_credentials_dialog():
                                 if os.path.exists(mentor_tpl_path):
                                     try:
                                         html_body = format_template(mentor_tpl_path, m_ctx)
-                                        dispatcher.send_email(mentor.id, f"Matchmaking Result - {group_a_label}", html_body)
+                                        dispatcher.send_email(mentor.id, f"PairSync Result", html_body)
                                         success_count += 1
                                     except Exception as e:
                                         error_count += 1
@@ -347,7 +347,7 @@ def email_credentials_dialog():
                                 m_ctx = build_mentee_email_context(m)
                                 try:
                                     html_body = format_template(mentee_tpl_path, m_ctx)
-                                    dispatcher.send_email(m.mentee.id, f"Matchmaking Result - {group_b_label}", html_body)
+                                    dispatcher.send_email(m.mentee.id, f"PairSync Result", html_body)
                                     success_count += 1
                                 except Exception as e:
                                     error_count += 1
